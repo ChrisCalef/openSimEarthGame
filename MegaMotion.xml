@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<gui>
+    <form id="1" name="megaMotionWindow" width="480" height="320">
+        <type>GuiWindowCtrl</type>
+        <horiz_align>1</horiz_align>
+        <vert_align>1</vert_align>
+        <pos_x>0.15</pos_x>
+        <pos_y>0.25</pos_y>
+        <horiz_padding>5</horiz_padding>
+        <vert_padding>3</vert_padding>
+        <horiz_edge_padding>20</horiz_edge_padding>
+        <vert_edge_padding>30</vert_edge_padding>
+        <element id="2" name="sceneSetLabel" width="55" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>megaMotionWindow</left_anchor>
+            <top_anchor>megaMotionWindow</top_anchor>
+            <content>SceneSet</content>
+            <tooltip>This is just a label.</tooltip>
+        </element>
+        <element id="3" name="sceneSetList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>sceneSetLabel</left_anchor>
+            <bottom_anchor>-sceneSetLabel</bottom_anchor>
+            <command>//loadScene(ScenesList.getSelected());</command>
+            <tooltip>Choose a scene to load.</tooltip>
+        </element>
+        <element id="4" name="sceneLabel" width="55" height="20">
+            <type>GuiTextCtrl</type>
+            <path>tools/worldEditor/images/toolbar/world</path>
+            <left_anchor>megaMotionWindow</left_anchor>
+            <top_anchor>sceneSetLabel</top_anchor>
+            <content>Scene</content>
+        </element>
+        <element id="5" name="TestButton1" width="20" height="20">
+            <type>GuiBitmapButtonCtrl</type>
+            <path>tools/worldEditor/images/toolbar/brushPaintNoise</path>
+            <left_anchor>sceneList</left_anchor>
+            <top_anchor>-sceneList</top_anchor>
+            <command>echo(\&quot;button does something else.\&quot;);</command>
+            <tooltip>This button will do something else.</tooltip>
+        </element>
+        <element id="7" name="TestButton3" width="20" height="20">
+            <type>GuiBitmapButtonCtrl</type>
+            <path>tools/worldEditor/images/toolbar/world</path>
+            <left_anchor>sceneSetList</left_anchor>
+            <top_anchor>-sceneSetList</top_anchor>
+            <command>echo(\&quot;button does THIS.\&quot;);</command>
+            <tooltip>This button will do something else.</tooltip>
+        </element>
+        <element id="8" name="sceneList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>sceneLabel</left_anchor>
+            <bottom_anchor>-sceneLabel</bottom_anchor>
+            <command>echo(\&quot;scene list command!\&quot;);</command>
+            <tooltip>changes the scene.</tooltip>
+        </element>
+        <element id="9" name="id_9" width="95" height="95">
+            <type>Virtual</type>
+            <right_anchor>megaMotionWindow</right_anchor>
+            <bottom_anchor>megaMotionWindow</bottom_anchor>
+            <horiz_padding>2</horiz_padding>
+            <vert_padding>2</vert_padding>
+            <horiz_edge_padding>2</horiz_edge_padding>
+            <vert_edge_padding>2</vert_edge_padding>
+            <element id="10" name="id_10" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_9</left_anchor>
+                <top_anchor>id_9</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="11" name="id_11" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_10</left_anchor>
+                <top_anchor>id_9</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="12" name="id_12" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_11</left_anchor>
+                <top_anchor>id_9</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="13" name="id_13" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/lowerHeight</path>
+                <left_anchor>id_9</left_anchor>
+                <top_anchor>id_12</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="14" name="id_14" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_13</left_anchor>
+                <top_anchor>id_12</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="15" name="id_15" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/setEmpty</path>
+                <left_anchor>id_14</left_anchor>
+                <top_anchor>id_12</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="16" name="id_16" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_9</left_anchor>
+                <top_anchor>id_15</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="17" name="id_17" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/brushAdjustHeight</path>
+                <left_anchor>id_16</left_anchor>
+                <top_anchor>id_15</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="18" name="id_18" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_17</left_anchor>
+                <top_anchor>id_15</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+        </element>
+        <element id="19" name="id_19" width="98" height="120">
+            <type>GuiWindowCtrl</type>
+            <left_anchor>megaMotionWindow</left_anchor>
+            <bottom_anchor>megaMotionWindow</bottom_anchor>
+            <horiz_padding>2</horiz_padding>
+            <vert_padding>2</vert_padding>
+            <horiz_edge_padding>2</horiz_edge_padding>
+            <vert_edge_padding>25</vert_edge_padding>
+            <element id="20" name="id_20" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_19</left_anchor>
+                <top_anchor>id_19</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="21" name="id_21" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_20</left_anchor>
+                <top_anchor>-id_20</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="22" name="id_22" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_21</left_anchor>
+                <top_anchor>-id_20</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="23" name="id_23" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_19</left_anchor>
+                <top_anchor>id_20</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="24" name="id_24" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_23</left_anchor>
+                <top_anchor>id_20</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="25" name="id_25" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_24</left_anchor>
+                <top_anchor>id_20</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="26" name="id_26" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_19</left_anchor>
+                <top_anchor>id_23</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="27" name="id_27" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/world</path>
+                <left_anchor>id_26</left_anchor>
+                <top_anchor>id_23</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+            <element id="28" name="id_28" width="30" height="30">
+                <type>GuiBitmapButtonCtrl</type>
+                <path>tools/worldEditor/images/toolbar/softCurve</path>
+                <left_anchor>id_27</left_anchor>
+                <top_anchor>id_23</top_anchor>
+                <command>echo(\&quot;button does THIS.\&quot;);</command>
+                <tooltip>Button in a subcontainer.</tooltip>
+            </element>
+        </element>
+        <element id="33" name="id_33" width="2" height="99">
+            <type>GuiBitmapCtrl</type>
+            <path>core/art/gui/images/separator-h</path>
+            <left_anchor>-id_9</left_anchor>
+            <top_anchor>-id_9</top_anchor>
+        </element>
+        <element id="34" name="id_34" width="98" height="2">
+            <type>GuiBitmapCtrl</type>
+            <path>core/art/gui/images/separator-v</path>
+            <left_anchor>-id_33</left_anchor>
+            <top_anchor>-id_33</top_anchor>
+            <horiz_padding>1</horiz_padding>
+        </element>
+        <element id="35" name="id_35" width="99" height="2">
+            <type>GuiBitmapCtrl</type>
+            <path>core/art/gui/images/separator-v</path>
+            <left_anchor>-id_33</left_anchor>
+            <bottom_anchor>-id_33</bottom_anchor>
+        </element>
+        <element id="36" name="id_36" width="2" height="98">
+            <type>GuiBitmapCtrl</type>
+            <path>core/art/gui/images/separator-h</path>
+            <right_anchor>-id_34</right_anchor>
+            <top_anchor>-id_34</top_anchor>
+        </element>
+    </form>
+</gui>

@@ -1,0 +1,324 @@
+//-------------------------- 4/24/2016 -- 20:07:31 -----
+Processor Init:
+   AMD Phenom, ~2.71 Ghz
+   FPU detected
+   MMX detected
+   3DNow detected
+   SSE detected
+   SSE2 detected
+   MP detected [2 cores, 2 logical, 1 physical]
+ 
+Math Init:
+   Installing Standard C extensions
+   Installing Assembly extensions
+   Installing FPU extensions
+   Installing MMX extensions
+   Installing 3DNow extensions
+   Installing SSE extensions
+ 
+Initializing platform...
+Input Init:
+   keyboard0 input device created.
+   mouse0 input device created.
+   joystick0 input device created.
+   DirectInput enabled.
+
+Done
+GFX Init:
+   Direct 3D (version 9.x) device found
+   Null device found
+
+DebugDrawer Enabled!
+--------- Loading DIRS ---------
+
+--------- Parsing Arguments ---------
+Binding server port to default IP
+UDP initialized on port 0
+Attempting to create GFX device: NVIDIA GeForce GTS 450 (D3D9) [\\.\DISPLAY1]
+Device created, setting adapter and enumerating modes
+   Cur. D3DDevice ref count=1
+   Pix version detected: 3.000000
+   Vert version detected: 3.000000
+   Maximum number of simultaneous samplers: 16
+   Number of simultaneous render targets: 4
+   Hardware occlusion query detected: Yes
+   Using Direct3D9Ex: No
+WMIVideoInfo: DxDiag initialized
+Initializing GFXCardProfiler (D3D9)
+   o Chipset : 'GeForce GTS 450'
+   o Card    : 'GeForce GTS 450'
+   o Version : '9.18.0013.4752'
+   o VRAM    : 1024 MB
+   - Scanning card capabilities...
+GFXCardProfiler (D3D9) - Setting capability 'autoMipMapLevel' to 1.
+GFXCardProfiler (D3D9) - Setting capability 'maxTextureWidth' to 16384.
+GFXCardProfiler (D3D9) - Setting capability 'maxTextureHeight' to 16384.
+GFXCardProfiler (D3D9) - Setting capability 'maxTextureSize' to 16384.
+GFXCardProfiler (D3D9) - Setting capability 'lerpDetailBlend' to 1.
+GFXCardProfiler (D3D9) - Setting capability 'fourStageDetailBlend' to 1.
+   - Loading card profiles...
+      - Loaded card profile core/profile/D3D9.cs
+      - No card profile core/profile/D3D9.GeForceGTS450.cs exists
+      - No card profile core/profile/D3D9.GeForceGTS450.GeForceGTS450.cs exists
+      - No card profile core/profile/D3D9.GeForceGTS450.GeForceGTS450.91800134752.cs exists
+% - PostFX Manager - Executing core/scripts/client/postFx/default.postfxpreset.cs
+% - PostFX Manager - Applying from preset
+% - PostFX Manager - PostFX enabled
+core/scripts/gui/messageBoxes/messageBox.ed.cs (23): string always evaluates to 0.
+ % - Initialized Core
+
+--------- Initializing Directory: scripts ---------
+PxInitVehicleSDK succeeded!!!
+Opened SQLITE Database openSimEarth.db
+sfxStartup...
+SFXSystem::createDevice - created Null device 'SFX Null Device'
+   Provider: Null
+   Device: SFX Null Device
+   Hardware: No
+   Buffers: 16
+
+--------- Initializing openSimEarth: Server Scripts ---------
+Successfully opened database: openSimEarth.db
+
+--------- Initializing openSimEarth: Client Scripts ---------
+
+--------- Initializing Lighting Systems ---------
+Using Advanced Lighting
+
+
+--------------
+Attempting to set resolution to "1024 768 false 32 60 4"
+Accepted Mode: 
+--Resolution : 1024 768
+--Full Screen : No
+--Bits Per Pixel : 32
+--Refresh Rate : 60
+--FSAA Level : 4
+--------------
+GFXPCD3D9Device::reset - depthstencil 3d6420 has 2 ref's
+--- Resetting D3D Device ---
+GFXPCD3D9Device::reset - depthstencil 65aea00 has 2 ref's
+--- Resetting D3D Device ---
+Warning, overwriting material for: ColorEffectR27G177B88-material
+[Material::mapMaterial] - Cannot map unnamed Material
+[Material::mapMaterial] - Cannot map unnamed Material
+[Material::mapMaterial] - Cannot map unnamed Material
+[Material::mapMaterial] - Cannot map unnamed Material
+[Material::mapMaterial] - Cannot map unnamed Material
+Binding server port to default IP
+UDP initialized on port 0
+Activating DirectInput...
+ % - Initializing Tools
+tools/gui/guiPlatformGenericMenubar.ed.gui (0): Unable to instantiate non-conobject class GuiPlatformGenericMenuBar.
+ % - Initializing Tools Base
+ % - Initializing Base Editor
+ % - Initializing World Editor
+ % - Initializing Behavior Tree Editor
+ % - Initializing Sketch Tool
+ - Initializing Datablock Editor
+ % - Initializing Debugger
+ % - Initializing Decal Editor
+ % - Initializing Forest Editor
+ % - Initializing Gui Editor
+ % - Initializing Material Editor
+ % - Initializing Mesh Road Editor
+ % - Initializing Mission Area Editor
+ % - Initializing Navigation Editor
+SimObject::linkNamespaces -- Namespace linkage already in place NavEditorConsoleListener
+ % - Initializing Particle Editor
+ % - Initializing Physics Tools
+ % - Initializing River Editor
+ - Initializing Road and Path Editor
+ % - Initializing Shape Editor
+Engine initialized...
+--------------------------------------------------------------------------------
+Module Manager: Started scanning 'F:/T3D/OpenSimEarth/My Projects/openSimEarth/game/'...
+Module Manager: Failed to scan modules files in directory 'F:/T3D/OpenSimEarth/My Projects/openSimEarth/game/rt'.
+Win32Window::WindowProc - resetting device due to window size change.
+GFXPCD3D9Device::reset - depthstencil 3dd400 has 2 ref's
+--- Resetting D3D Device ---
+Window focus status changed: focus: 1
+AntiAliasing has been disabled; it is not compatible with AdvancedLighting.
+Exporting server prefs...
+PhysX3 using Cpu: 2 workers
+TSShape::addSequence: Could not load DSQ file 'art/shapes/Daz3D/Michael4/sequences/zombiePunt2.dsq'
+TSShape::addSequence: Could not load DSQ file 'art/shapes/Daz3D/Michael4/sequences/Mime.dsq'
+TSShape::addSequence: Could not load DSQ file 'art/shapes/Daz3D/Michael4/scene_2/shape_1.dsq'
+TSShapeConstructor::setSequenceCyclic: Could not find sequence named 'tpose'
+TSShape::addNode: ColBoxB-1 already exists!
+TSShape::addNode: ColBox-1 already exists!
+[Win32FileSystemChangeNotifier::internalAddNotification] : failed on [F:\T3D\OpenSimEarth\My Projects\openSimEarth\game\art\shapes\physx3] [2]
+Resource<TSShape>::create - Error reading 'art/shapes/physx3/cube.dae'
+Failed to create resource: [art/shapes/physx3/cube.dae]
+art/datablocks/physicsShape.cs (368): preload failed for PSCube_ClientServer: PhysicsShapeData::preload - Unable to load shape 'art/shapes/physx3/cube.dae'..
+[Win32FileSystemChangeNotifier::internalAddNotification] : failed on [F:\T3D\OpenSimEarth\My Projects\openSimEarth\game\art\shapes\physx3] [2]
+Resource<TSShape>::create - Error reading 'art/shapes/physx3/cube.dae'
+Failed to create resource: [art/shapes/physx3/cube.dae]
+art/datablocks/physicsShape.cs (419): preload failed for PSCube_Server: PhysicsShapeData::preload - Unable to load shape 'art/shapes/physx3/cube.dae'..
+[Win32FileSystemChangeNotifier::internalAddNotification] : failed on [F:\T3D\OpenSimEarth\My Projects\openSimEarth\game\art\shapes\physx3] [2]
+Resource<TSShape>::create - Error reading 'art/shapes/physx3/cube.dae'
+Failed to create resource: [art/shapes/physx3/cube.dae]
+art/datablocks/physicsShape.cs (471): preload failed for PSCube_Client: PhysicsShapeData::preload - Unable to load shape 'art/shapes/physx3/cube.dae'..
+[Win32FileSystemChangeNotifier::internalAddNotification] : failed on [F:\T3D\OpenSimEarth\My Projects\openSimEarth\game\art\shapes\physx3] [2]
+Resource<TSShape>::create - Error reading 'art/shapes/physx3/cube.dae'
+Failed to create resource: [art/shapes/physx3/cube.dae]
+art/datablocks/physicsShape.cs (0): preload failed for PSCubeActivateTriggers: RigidPhysicsShapeData::preload - Unable to load shape 'art/shapes/physx3/cube.dae'..
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 0 (Collision-1) bounds exceed that of shape.
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 0 (Collision-1) bounds exceed that of shape.
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 0 (Collision-1) bounds exceed that of shape.
+TSShape::removeNode: Node 'collision-1' has 1 objects attached, these will be reassigned to the node's parent ('null')
+TSShape::removeNode: Node 'Cheetah_Turret_LOD300' has 1 objects attached, these will be reassigned to the node's parent ('null')
+TSShape::removeNode: Node 'Tread_LOD300' has 1 objects attached, these will be reassigned to the node's parent ('null')
+TSShape::removeNode: Node 'collision-1' has 1 objects attached, these will be reassigned to the node's parent ('null')
+TSShape::removeNode: Node 'TireBack_LOD300' has 1 objects attached, these will be reassigned to the node's parent ('null')
+TSShape::removeNode: Node 'collision-1' has 1 objects attached, these will be reassigned to the node's parent ('null')
+*** LOADING MISSION: levels/Empty Room.mis
+*** Stage 1 load
+*** Stage 2 load
+Game -> activatePackages
+*** Mission loaded
+Connect request from: IP:0.0.0.0:0
+Connection established 20160
+PhysX3 using Cpu: 2 workers
+CADD: 20161 local
+*** Sending mission load to client: levels/Empty Room.mis
+Mapping string: ServerMessage to index: 0
+Mapping string: MsgConnectionError to index: 1
+Mapping string: MsgLoadInfo to index: 2
+Mapping string: MsgLoadDescripition to index: 3
+Mapping string: MsgLoadInfoDone to index: 4
+Mapping string: MissionStartPhase1 to index: 5
+*** New Mission: levels/Empty Room.mis
+*** Phase 1: Download Datablocks & Targets
+% - PostFX Manager - Executing core/scripts/client/postFx/default.postfxpreset.cs
+% - PostFX Manager - Applying from preset
+% - PostFX Manager - PostFX enabled
+Mapping string: MissionStartPhase1Ack to index: 0
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 1 (Collision-1) bounds exceed that of shape.
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 1 (Collision-1) bounds exceed that of shape.
+Warning: shape art/shapes/weapons/Turret/Turret_Legs.DAE collision detail 1 (Collision-1) bounds exceed that of shape.
+[MaterialList::mapMaterials] Unable to find material for texture: base.lmale
+Mapping string: MissionStartPhase2 to index: 6
+*** Phase 2: Download Ghost Objects
+Mapping string: MissionStartPhase2Ack to index: 1
+Ghost Always objects received.
+Mapping string: MissionStartPhase3 to index: 7
+Client Replication Startup has Happened!
+fxFoliageReplicator - replicated client foliage for 0 objects
+*** Phase 3: Mission Lighting
+Mission lighting done
+Mapping string: MissionStartPhase3Ack to index: 2
+Mapping string: MissionStart to index: 8
+Mapping string: SyncClock to index: 9
+Mapping string: RefreshWeaponHud to index: 10
+Mapping string: SetAmmoAmountHud to index: 11
+Mapping string: ryder.png to index: 12
+Mapping string: MsgClientJoin to index: 13
+Mapping string: Welcome to the Torque demo app %1. to index: 14
+Mapping string: Visitor to index: 15
+reading camera position 0.597204 0.336023 4.570370  clock 22910
+*** Initial Control Object
+*** Control Object Changed
+Mapping string: DarkGreen to index: 16
+F:/T3D/OpenSimEarth/My Projects/openSimEarth/game/shaders/common/postFx/edgeaa/edgeDetectP.hlsl(51,13): warning X3550: array reference cannot be used as an l-value; not natively addressable, forcing loop to unroll
+Mapping string: unmountWeapon to index: 3
+Win32Window::WindowProc - resetting device due to window size change.
+GFXPCD3D9Device::reset - depthstencil 660bec0 has 2 ref's
+--- Resetting D3D Device ---
+Time spent in toggleEditor() : 1.211 s
+Mapping string: SetEditorCameraPlayer to index: 4
+SQLite QUERY: SELECT e.id,e.parent_id,e.bitmap_id,e.left_anchor,e.right_anchor,e.top_anchor,e.bottom_anchor,e.type,e.content,e.name,e.width,e.height,e.command,e.tooltip,e.horiz_align,e.vert_align,e.pos_x,e.pos_y,e.horiz_padding,e.vert_padding,e.horiz_edge_padding,e.vert_edge_padding,e.variable,e.button_type,e.group_num,e.profile,e.value,b.path FROM uiElement e LEFT JOIN uiBitmap b ON b.id=e.bitmap_id WHERE e.form_id=159;
+calling setupMegaMotionScenesForm
+SQLite QUERY: SELECT id,name FROM project ORDER BY name;
+calling selectMegaMotionProject 2
+SQLite QUERY: SELECT id,name FROM scene WHERE project_id=2 ORDER BY name;
+calling selectMegaMotionScene
+calling selectMegaMotionScene on scene 1
+SQLite QUERY: SELECT ss.id,ps.id AS ps_id, ps.name FROM sceneShape ss JOIN physicsShape ps ON ps.id=ss.shape_id WHERE scene_id=1;
+selecting mm scene shape!!!!
+SQLite QUERY: SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,p.x as pos_x,p.y as pos_y,p.z as pos_z,r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle,sc.x as scale_x,sc.y as scale_y,sc.z as scale_z FROM sceneShape ss LEFT JOIN vector3 p ON ss.pos_id=p.id LEFT JOIN rotation r ON ss.rot_id=r.id LEFT JOIN vector3 sc ON ss.scale_id=sc.id WHERE ss.id=5;
+calling selectMegaMotionShape
+SQLite QUERY: SELECT id,name FROM physicsShape ORDER BY name;
+SQLite QUERY: SELECT id,name FROM px3Joint ORDER BY name;
+calling selectMegaMotionProject 3
+SQLite QUERY: SELECT id,name FROM scene WHERE project_id=3 ORDER BY name;
+calling selectMegaMotionScene
+calling selectMegaMotionScene on scene 5
+SQLite QUERY: SELECT ss.id,ps.id AS ps_id, ps.name FROM sceneShape ss JOIN physicsShape ps ON ps.id=ss.shape_id WHERE scene_id=5;
+selecting mm scene shape!!!!
+SQLite QUERY: SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,p.x as pos_x,p.y as pos_y,p.z as pos_z,r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle,sc.x as scale_x,sc.y as scale_y,sc.z as scale_z FROM sceneShape ss LEFT JOIN vector3 p ON ss.pos_id=p.id LEFT JOIN rotation r ON ss.rot_id=r.id LEFT JOIN vector3 sc ON ss.scale_id=sc.id WHERE ss.id=22;
+calling selectMegaMotionShape
+
+SELECT id,name FROM physicsShapePart WHERE physicsShape_id=1;
+
+SQLite QUERY: SELECT id,name FROM physicsShapePart WHERE physicsShape_id=1;
+calling selectMegaMotionShapePart, part_id 1
+
+SELECT * FROM physicsShapePart WHERE id=1;
+
+SQLite QUERY: SELECT * FROM physicsShapePart WHERE id=1;
+SQLite QUERY: SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,p.x as pos_x,p.y as pos_y,p.z as pos_z,r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle,sc.x as scale_x,sc.y as scale_y,sc.z as scale_z,sp.x as scene_pos_x,sp.y as scene_pos_y,sp.z as scene_pos_z,sh.datablock as datablock FROM sceneShape ss JOIN scene s ON s.id=scene_id LEFT JOIN vector3 p ON ss.pos_id=p.id LEFT JOIN rotation r ON ss.rot_id=r.id LEFT JOIN vector3 sc ON ss.scale_id=sc.id LEFT JOIN vector3 sp ON s.pos_id=sp.id JOIN physicsShape sh ON ss.shape_id=sh.id WHERE scene_id=5;
+calling loadScene, result 13
+Query: SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,p.x as pos_x,p.y as pos_y,p.z as pos_z,r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle,sc.x as scale_x,sc.y as scale_y,sc.z as scale_z,sp.x as scene_pos_x,sp.y as scene_pos_y,sp.z as scene_pos_z,sh.datablock as datablock FROM sceneShape ss JOIN scene s ON s.id=scene_id LEFT JOIN vector3 p ON ss.pos_id=p.id LEFT JOIN rotation r ON ss.rot_id=r.id LEFT JOIN vector3 sc ON ss.scale_id=sc.id LEFT JOIN vector3 sp ON s.pos_id=sp.id JOIN physicsShape sh ON ss.shape_id=sh.id WHERE scene_id=5;
+Found a sceneShape: 22 -0.0030977 8.34916 0.0701348 scenePos NULL NULL NULL
+loading sceneShape id 1 position -0.0030977 8.34916 0.0701348 rotation 0.0 0.0 1.0 171.49 scale 1.0 1.0 0.513204
+SQLite QUERY: SELECT * FROM physicsShapePart WHERE physicsShape_id=1;
+SQLite QUERY: SELECT id FROM shapeFile WHERE path IN ('art/shapes/Daz3D/Michael4/M4.dts');
+SQLite QUERY: SELECT * FROM shapeMount WHERE parent_shape_id=8;
+Adding a scene shape: 22, position -0.0030977 8.34916 0.0701348
+[MaterialList::mapMaterials] Creating missing material for texture: art/shapes/Daz3D/Michael4/m4_em
+SQLite QUERY: SELECT * FROM physicsShapePart WHERE physicsShape_id=1;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=0;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=8;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=8;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=8;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=8;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=9;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=9;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=10;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=10;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=11;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=11;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=13;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=13;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=15;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=15;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=17;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=17;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=12;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=12;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=14;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=14;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=16;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=16;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=18;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=18;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=19;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=19;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=21;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=21;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=23;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=23;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=20;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=20;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=22;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=22;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=24;
+SQLite QUERY: SELECT * FROM px3Joint WHERE id=24;
+SQLite QUERY: SELECT vehicle_id FROM physicsShape WHERE id=1;
+BehaviorTreeManager::assignTree - NULL is not a member of BehaviorTreeGroup
+Win32Window::WindowProc - resetting device due to window size change.
+GFXPCD3D9Device::reset - depthstencil cc42e20 has 2 ref's
+--- Resetting D3D Device ---
+calling physicsShape destructor, sceneShapeID -1
+*** ENDING MISSION
+calling physicsShape destructor, sceneShapeID 22
+20159 -> deactivatePackages
+CDROP: 20161 IP:0.0.0.0:0
+Exporting server prefs...
+SQLiteObject Warning: Result set #1 was not cleared by script.  Clearing it now.
+SQLiteObject Warning: Result set #2 was not cleared by script.  Clearing it now.
+Exporting client prefs
+Exporting server prefs
+SQLiteObject Warning: Result set #12 was not cleared by script.  Clearing it now.
+Cur. D3DDevice ref count=1

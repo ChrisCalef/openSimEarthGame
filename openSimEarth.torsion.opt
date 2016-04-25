@@ -1,0 +1,21 @@
+<TorsionProjectOptions>
+<Address>127.0.0.1</Address>
+<Password>password</Password>
+<Port>6060</Port>
+<LastConfig>Debug</LastConfig>
+<Breakpoints/>
+<Bookmarks/>
+<OpenFiles>
+<File ScrollX="0" ScrollY="112">scripts\server\openSimEarth.cs</File>
+<File ScrollX="0" ScrollY="0">art\shapes\Daz3D\Michael4\M4.cs</File>
+<File ScrollX="0" ScrollY="644">scripts\client\default.bind.cs</File>
+<File ScrollX="0" ScrollY="989">scripts\server\uiForms.cs</File>
+<File ScrollX="0" ScrollY="203">core\scripts\client\core.cs</File>
+<File ScrollX="0" ScrollY="703" Active="true">scripts\server\MegaMotion.cs</File>
+<File ScrollX="0" ScrollY="272">tools\worldEditor\scripts\menuHandlers.ed.cs</File>
+<File ScrollX="0" ScrollY="97">tools\worldEditor\scripts\menus.ed.cs</File>
+<File ScrollX="0" ScrollY="0">levels\TerrainPager.mis</File>
+<File ScrollX="0" ScrollY="193">tools\worldEditor\scripts\editors\worldEditor.ed.cs</File>
+<File ScrollX="0" ScrollY="1247">levels\Outpost.mis</File>
+</OpenFiles>
+</TorsionProjectOptions>

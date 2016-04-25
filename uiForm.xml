@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<gui>
+    <form id="37" name="uiFormWindow" width="475" height="640">
+        <type>GuiWindowCtrl</type>
+        <horiz_align>1</horiz_align>
+        <vert_align>1</vert_align>
+        <pos_x>0.15</pos_x>
+        <pos_y>0.1</pos_y>
+        <horiz_padding>5</horiz_padding>
+        <vert_padding>3</vert_padding>
+        <horiz_edge_padding>10</horiz_edge_padding>
+        <vert_edge_padding>10</vert_edge_padding>
+        <element id="38" name="parentLabel" width="125" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>uiFormWindow</top_anchor>
+            <content>parent</content>
+            <vert_padding>43</vert_padding>
+        </element>
+        <element id="39" name="parentList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-parentLabel</top_anchor>
+        </element>
+        <element id="40" name="bitmapLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>parentLabel</top_anchor>
+            <content>bitmap</content>
+        </element>
+        <element id="41" name="bitmapList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-bitmapLabel</top_anchor>
+        </element>
+        <element id="42" name="leftAnchorLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>bitmapLabel</top_anchor>
+            <content>left anchor</content>
+        </element>
+        <element id="43" name="rightAnchorLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>leftAnchorLabel</top_anchor>
+            <content>right anchor</content>
+        </element>
+        <element id="44" name="topAnchorLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>rightAnchorLabel</top_anchor>
+            <content>top anchor</content>
+        </element>
+        <element id="45" name="bottomAnchorLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>topAnchorLabel</top_anchor>
+            <content>bottom anchor</content>
+        </element>
+        <element id="46" name="typeLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>bottomAnchorLabel</top_anchor>
+            <content>type</content>
+        </element>
+        <element id="47" name="contentLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>typeLabel</top_anchor>
+            <content>content</content>
+        </element>
+        <element id="48" name="nameLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>contentLabel</top_anchor>
+            <content>name</content>
+        </element>
+        <element id="49" name="widthLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>nameLabel</top_anchor>
+            <content>width</content>
+        </element>
+        <element id="50" name="heightLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>widthEdit</left_anchor>
+            <top_anchor>-widthLabel</top_anchor>
+            <content>height</content>
+        </element>
+        <element id="51" name="commandLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>widthLabel</top_anchor>
+            <content>command</content>
+        </element>
+        <element id="52" name="tooltipLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>commandLabel</top_anchor>
+            <content>tooltip</content>
+        </element>
+        <element id="53" name="horizAlignLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>tooltipLabel</top_anchor>
+            <content>horiz align</content>
+        </element>
+        <element id="54" name="vertAlignLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>horizAlignList</left_anchor>
+            <top_anchor>-horizAlignLabel</top_anchor>
+            <content>vert align</content>
+        </element>
+        <element id="55" name="posXLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>horizAlignLabel</top_anchor>
+            <content>pos x</content>
+        </element>
+        <element id="56" name="posYLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>posXLabel</top_anchor>
+            <content>pos y</content>
+        </element>
+        <element id="57" name="horizPaddingLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>posYLabel</top_anchor>
+            <content>horiz padding</content>
+        </element>
+        <element id="58" name="vertPaddingLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>horizPaddingLabel</top_anchor>
+            <content>vert padding</content>
+        </element>
+        <element id="59" name="horizEdgePaddingLabel" width="120" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>vertPaddingLabel</top_anchor>
+            <content>horiz edge padding</content>
+        </element>
+        <element id="60" name="vertEdgePaddingLabel" width="120" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>horizEdgePaddingLabel</top_anchor>
+            <content>vert edge padding</content>
+        </element>
+        <element id="61" name="variableLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>vertEdgePaddingLabel</top_anchor>
+            <content>variable</content>
+        </element>
+        <element id="62" name="buttonTypeLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>variableLabel</top_anchor>
+            <content>button type</content>
+        </element>
+        <element id="63" name="groupNumLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>buttonTypeLabel</top_anchor>
+            <content>group num</content>
+        </element>
+        <element id="64" name="profileLabel" width="75" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>groupNumLabel</top_anchor>
+            <content>profile</content>
+        </element>
+        <element id="65" name="leftAnchorList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-leftAnchorLabel</top_anchor>
+        </element>
+        <element id="66" name="rightAnchorList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-rightAnchorLabel</top_anchor>
+        </element>
+        <element id="67" name="topAnchorList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-topAnchorLabel</top_anchor>
+        </element>
+        <element id="68" name="bottomAnchorList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-bottomAnchorLabel</top_anchor>
+        </element>
+        <element id="69" name="typeEdit" width="320" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-typeLabel</top_anchor>
+        </element>
+        <element id="70" name="contentEdit" width="320" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-contentLabel</top_anchor>
+        </element>
+        <element id="71" name="nameEdit" width="320" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-nameLabel</top_anchor>
+        </element>
+        <element id="72" name="widthEdit" width="60" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-widthLabel</top_anchor>
+        </element>
+        <element id="73" name="heightEdit" width="60" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>heightLabel</left_anchor>
+            <top_anchor>-heightLabel</top_anchor>
+        </element>
+        <element id="74" name="commandEdit" width="320" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-commandLabel</top_anchor>
+        </element>
+        <element id="75" name="tooltipEdit" width="320" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-tooltipLabel</top_anchor>
+        </element>
+        <element id="76" name="horizAlignList" width="60" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-horizAlignLabel</top_anchor>
+        </element>
+        <element id="77" name="vertAlignList" width="60" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>vertAlignLabel</left_anchor>
+            <top_anchor>-vertAlignLabel</top_anchor>
+        </element>
+        <element id="78" name="PosXEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-posXLabel</top_anchor>
+        </element>
+        <element id="79" name="PosYEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-posYLabel</top_anchor>
+        </element>
+        <element id="80" name="horizPaddingEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-horizPaddingLabel</top_anchor>
+        </element>
+        <element id="81" name="vertPaddingEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-vertPaddingLabel</top_anchor>
+        </element>
+        <element id="82" name="horizEdgePaddingEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-horizEdgePaddingLabel</top_anchor>
+        </element>
+        <element id="83" name="vertEdgePaddingEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-vertEdgePaddingLabel</top_anchor>
+        </element>
+        <element id="84" name="variableEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-variableLabel</top_anchor>
+        </element>
+        <element id="85" name="buttonTypeEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-buttonTypeLabel</top_anchor>
+        </element>
+        <element id="86" name="groupNumEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-groupNumLabel</top_anchor>
+        </element>
+        <element id="87" name="profileEdit" width="120" height="20">
+            <type>GuiTextEditCtrl</type>
+            <left_anchor>parentLabel</left_anchor>
+            <top_anchor>-profileLabel</top_anchor>
+        </element>
+        <element id="88" name="elementLabel" width="125" height="20">
+            <type>GuiTextCtrl</type>
+            <left_anchor>uiFormWindow</left_anchor>
+            <top_anchor>uiFormWindow</top_anchor>
+            <content>element</content>
+            <vert_padding>20</vert_padding>
+        </element>
+        <element id="89" name="elementList" width="120" height="20">
+            <type>GuiPopUpMenuCtrl</type>
+            <left_anchor>elementLabel</left_anchor>
+            <top_anchor>-elementLabel</top_anchor>
+        </element>
+    </form>
+</gui>
