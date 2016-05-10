@@ -695,7 +695,10 @@ function EWCreatorWindow::addStaticIcon( %this, %fullPath )
           "Last Modified: " @ fileModifiedTime( %fullPath );
 
    %createCmd = "EWCreatorWindow.createStatic( \\\"" @ %fullPath @ "\\\" );";
-   %ctrl.altCommand = "ColladaImportDlg.showDialog( \"" @ %fullPath @ "\", \"" @ %createCmd @ "\" );";
+   if (%ext $= ".fbx")
+      %ctrl.altCommand = "FbxImportDlg.showDialog( \"" @ %fullPath @ "\", \"" @ %createCmd @ "\" );";
+   else
+   	%ctrl.altCommand = "ColladaImportDlg.showDialog( \"" @ %fullPath @ "\", \"" @ %createCmd @ "\" );";
 
    %ctrl.iconBitmap = ( ( %ext $= ".dts" ) ? EditorIconRegistry::findIconByClassName( "TSStatic" ) : "tools/gui/images/iconCollada" );
    %ctrl.text = %file;

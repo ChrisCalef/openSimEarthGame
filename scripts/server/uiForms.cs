@@ -404,10 +404,18 @@ function deleteUIElement()
       MessageBoxOK("","Delete the form using the Form delete button, not the Element delete button.","");
       return;  
    }
-   MessageBoxYesNoCancel( "Delete Element", "This will permanently delete this element and all of its child elements. Are you sure you want to do this?",
- "reallyDeleteUIElement();",
- "",
- "");
+   %elem_id = $elementList.getSelected();
+   %query = "SELECT id FROM uiElement WHERE %parent_id=" @ %elem_id @ " OR left_anchor=" @ %elem_id @
+      " OR right_anchor=" @ %elem_id @ " OR top_anchor=" @ %elem_id @ " OR bottom_anchor=" @ %elem_id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   if (sqlite.numRows(%resultSet)>0)
+   {
+      MessageBoxOK("","This element has children or other elements using it as an anchor. Please fix these first.","");
+      return;
+   }   
+   
+   MessageBoxYesNoCancel( "Delete Element", "This will permanently delete this element. Are you sure you want to do this?",
+      "reallyDeleteUIElement();","","");
 }
 
 function reallyDeleteUIElement()
@@ -416,11 +424,15 @@ function reallyDeleteUIElement()
    //Next pass: hook up radio buttons to decide whether to do this, or to reassign them to parent.
    //UPDATE: On second thought, screw the recursion, just lock it down to the reassign option for now
    //and delete one element at a time. 
-
-   %form_id = $formList.getSelected();
-   %elem_id = $elementList.getSelected();
-   %parent_id = $parentList.getSelected();
    
+   //WHOOPS: the following takes care of the first layer of children, but is not recursive! FIX!
+
+   %elem_id = $elementList.getSelected();
+   %form_id = $formList.getSelected();
+   %parent_id = $parentList.getSelected();
+
+   //Just ignore until you do it right. For now we are opting out above if there are any children or anchors.
+   /*
    %query = "UPDATE uiElement SET parent_id=" @ %parent_id @ " WHERE parent_id=" @ %elem_id @ " AND form_id=" @ %form_id @ ";";
    sqlite.query(%query,0);
    %query = "UPDATE uiElement SET left_anchor=" @ %parent_id @ " WHERE left_anchor=" @ %elem_id @ " AND form_id=" @ %form_id @ ";";
@@ -431,15 +443,13 @@ function reallyDeleteUIElement()
    sqlite.query(%query,0);
    %query = "UPDATE uiElement SET bottom_anchor=" @ %parent_id @ " WHERE bottom_anchor=" @ %elem_id @ " AND form_id=" @ %form_id @ ";";
    sqlite.query(%query,0);
+   */
    
    //And, finally, delete the actual element:
    %query = "DELETE FROM uiElement WHERE id=" @ %elem_id @ ";";
    sqlite.query(%query,0);
    
-   //There, much easier.   
-   
    exposeUIFormWindow();//Re expose window, to refresh element list.
-
 }
 
 /*
@@ -601,7 +611,7 @@ function updateUIElement()
    %query = "UPDATE uiElement SET " @   
       "parent_id=" @ $parentList.getSelected() @
       ",name=\"" @ $nameEdit.getText() @ "\"";
-      
+
    %leftAnchor = $leftAnchorList.getSelected();
    %rightAnchor = $rightAnchorList.getSelected();
    %topAnchor = $topAnchorList.getSelected();
