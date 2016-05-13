@@ -361,6 +361,15 @@ function reallyAddUIElement()
       %msg = "The Width and Height fields need to be positive integer values.";
    }
    
+   %query = "SELECT id FROM uiElement WHERE name='" @ $addUIElementName @ "' AND form_id=" @
+                 $formList.getSelected() @ ";";
+   %resultSet = sqlite.query(%query,0);
+   if (sqlite.numRows(%resultSet)>0)
+   {
+      MessageBoxOK("Name Invalid","Element name must be unique for this form.","");
+      return;
+   }
+   
    if (strlen(%msg)>0)
    {
       MessageBoxOK("Invalid Field",%msg,"");
