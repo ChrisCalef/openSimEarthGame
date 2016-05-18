@@ -238,7 +238,7 @@ function updateMegaMotionForm()
 
 function updateMMSceneShapeTab()
 {
-   
+   echo("UPDATING SCENE SHAPE TAB, behavior " @ $mmSceneShapeBehaviorTree.getText() );
    %pos_x = $mmSceneShapePositionX.getText();
    %pos_y = $mmSceneShapePositionY.getText();
    %pos_z = $mmSceneShapePositionZ.getText();
@@ -579,6 +579,8 @@ function reallyAddMMProject()
       %query = "INSERT INTO project (name) VALUES ('" @ %name @ "');";
       sqlite.query(%query,0);
       
+      addMMProjectWindow.delete();
+      
       exposeMegaMotionScenesForm();
    }
 }
@@ -630,7 +632,7 @@ function loadMMProject()
 
 function unloadMMProject()
 {
-   //Remove project environment objects.
+   //Remove project environment objects?
    
 }
 
@@ -703,6 +705,8 @@ function reallyAddMMScene()  //TO DO: Description, position.
       %query = "INSERT INTO scene (name,project_id,pos_id) VALUES ('" @ %name @ "'," @ %proj_id @ 
                   ",last_insert_rowid());";
       sqlite.query(%query,0);
+            
+      addMMSceneWindow.delete();
       
       exposeMegaMotionScenesForm();
    }
@@ -739,6 +743,8 @@ function reallyDeleteMMScene(%id)
    
    %query = "DELETE FROM scene WHERE id=" @ %id @ ";";
    sqlite.query(%query,0);
+   
+   exposeMegaMotionScenesForm();
 }
 
 function loadMMScene(%id)
@@ -845,12 +851,13 @@ function loadMMScene(%id)
             isDynamic = %dyn;
             sceneShapeID = %sceneShape_id;
             sceneID = %id;
-            targetType = "Health";//"AmmoClip"
+            targetType = "Health";//"AmmoClip" "Player"
             isDirty = false;
          };
          
          MissionGroup.add(%temp);   
          SceneShapes.add(%temp);   
+         
          echo("Adding a scene shape: " @ %sceneShape_id @ ", position " @ %position );
          
          if ((strlen(%behaviorTree)>0)&&(%behaviorTree!$="NULL"))
@@ -1377,6 +1384,10 @@ function setupAddMMSceneShapeForm()
    %blockPaddingY = addMMSceneShapeWindow.findObjectByInternalName("blockPaddingY"); 
    %blockVariationX = addMMSceneShapeWindow.findObjectByInternalName("blockVariationX"); 
    %blockVariationY = addMMSceneShapeWindow.findObjectByInternalName("blockVariationY"); 
+   %blockRotX = addMMSceneShapeWindow.findObjectByInternalName("blockRotationX"); 
+   %blockRotY = addMMSceneShapeWindow.findObjectByInternalName("blockRotationY"); 
+   %blockRotZ = addMMSceneShapeWindow.findObjectByInternalName("blockRotationZ"); 
+   %blockRotAngle = addMMSceneShapeWindow.findObjectByInternalName("blockRotationAngle"); 
    
    %blockX.setText(2);
    %blockY.setText(2);
@@ -1384,12 +1395,15 @@ function setupAddMMSceneShapeForm()
    %blockPaddingY.setText(2);
    %blockVariationX.setText(0);
    %blockVariationY.setText(0);
+   %blockRotX.setText(0);
+   %blockRotY.setText(0);
+   %blockRotZ.setText(1);
+   %blockRotAngle.setText(0);
    
 }
 
 function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTree.
 {
-   echo("ADDING A SCENE SHAPE");
    %name = addMMSceneShapeWindow.findObjectByInternalName("nameEdit").getText(); 
    //if (substr(%name," ")>0)
    //{
@@ -1399,7 +1413,7 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
    %scene_id = $mmSceneList.getSelected();
    %shape_id = addMMSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
    %group_id = addMMSceneShapeWindow.findObjectByInternalName("groupList").getSelected();
-   %behaviorTree = addMMSceneShapeWindow.findObjectByInternalName("behaviorTree").getText();
+   %behavior_tree = addMMSceneShapeWindow.findObjectByInternalName("behaviorTree").getText();
    
    %pos_x = addMMSceneShapeWindow.findObjectByInternalName("shapePositionX").getText();
    %pos_y = addMMSceneShapeWindow.findObjectByInternalName("shapePositionY").getText();
@@ -1432,8 +1446,9 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
    //And, insert pos, rot & scale, and get the ids back. Q: what is the most efficient way to do this?
    //For now, I'm inserting the other stuff, grabbing an id, and then inserting the pos/rot/scale and
    //using last_insert_rowid() in update statements.
-   %query = "INSERT INTO sceneShape (name,scene_id,shape_id) " @
-            " VALUES ('" @ %name @ "'," @ %scene_id @ "," @ %shape_id @ ");";
+   %query = "INSERT INTO sceneShape (name,scene_id,shape_id,shapeGroup_id,behavior_tree) " @
+            " VALUES ('" @ %name @ "'," @ %scene_id @ "," @ %shape_id @ "," @ %group_id @
+             ",'" @ %behavior_tree @ "');";
    sqlite.query(%query,0);
 
    //These are optional, check for values first.      
@@ -1468,6 +1483,8 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
    %query = "UPDATE sceneShape SET scale_id=last_insert_rowid() WHERE id=" @ %ss_id @ ";";
    sqlite.query(%query, 0);  
    
+   addMMSceneShapeWindow.delete();
+      
    exposeMegaMotionScenesForm();
    unloadMMScene($mmSceneList.getSelected());
    loadMMScene($mmSceneList.getSelected());
@@ -1504,6 +1521,8 @@ function reallyAddMMShapeGroup()
       %query = "INSERT INTO shapeGroup (name) VALUES ('" @ %name @ "');";
       sqlite.query(%query,0);
       
+      addMMShapeGroupWindow.delete();
+      
       exposeMegaMotionScenesForm();
    }
 }
@@ -1530,11 +1549,14 @@ function addMMSceneShapeBlock()
 
    echo("finished adding characters, clock  " @ getClock() @ " elapsed " @ getClock()-%lastClock);
    %lastClock = getClock();
-   exposeMegaMotionScenesForm();
+   
    unloadMMScene($mmSceneList.getSelected());
    loadMMScene($mmSceneList.getSelected());
    echo("reloaded scene, clock  " @ getClock() @ " elapsed " @ getClock()-%lastClock);
   
+   addMMShapeGroupWindow.delete();
+      
+   exposeMegaMotionScenesForm();
 }
 
    /*
@@ -1663,18 +1685,22 @@ function addMMSceneShapeBlock()
 
 //////////////////////////////////////////////////////////////////////
 
-
 function shapesAct()
 {
    //pdd(1);
    for (%i=0;%i<SceneShapes.getCount();%i++)
    {
-      %shape = SceneShapes.getObject(%i);        
+      %shape = SceneShapes.getObject(%i); 
+      
+      //%clientShape = %shape.getClientObject();//SINGLE PLAYER
+      //%clientShape.createVehicle(%clientShape.getPosition(),0);//getRotation?   
+      //echo("adding vehicle for sceneShape " @ %clientShape @ " position " @ %clientShape.getPosition() );
+      
       //%shape.setHasGravity(false);
       
-      %shape.setDynamic(1);
+      //%shape.setDynamic(1);
       
-      %shape.setPartDynamic(0,0);
+      //%shape.setPartDynamic(0,0);
       //%shape.setPartDynamic(1,0);
       //%shape.setPartDynamic(2,0);  
       //%shape.setPartDynamic(3,0); 

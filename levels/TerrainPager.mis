@@ -38,14 +38,16 @@ new SimGroup(MissionGroup) {
       scale = "1 1 1";
       canSave = "1";
       canSaveDynamicFields = "1";
-   };   
+   };
    new Sun(theSun) {
-      azimuth = "125";
-      elevation = "70";
+      azimuth = "175";
+      elevation = "130";
       color = "0.968628 0.901961 0.901961 1";
       ambient = "0.078431 0.113725 0.156863 1";
       brightness = "1.5";
       castShadows = "1";
+      staticRefreshFreq = "20";
+      dynamicRefreshFreq = "1";
       coronaEnabled = "1";
       coronaScale = "0.5";
       coronaTint = "1 1 1 1";
@@ -79,8 +81,6 @@ new SimGroup(MissionGroup) {
          shadowBox = "-100 -100 -100 100 100 100";
          splitFadeDistances = "1 1 1 1";
          width = "3072";
-      dynamicRefreshFreq = 1;//HERE: for some reason the default value of 8, or higher, results in transparents badly flickering.
-      staticRefreshFreq = 20;//HERE: this defaults to 250, which is very slow refresh. 
    };
    new TerrainBlock(BaseTerrain) {
       terrainFile = "art/terrains/TerrainPager.ter";
@@ -137,12 +137,12 @@ new SimGroup(MissionGroup) {
       skyboxRes = "800";
       forestTickInterval = "120";
       useDataSource = "0";
-      doForest = "1";
-      doForestUpdates = "1";
-      doStreets = "1";
-      doStreetUpdates = "1";
+      doForest = "0";
+      doForestUpdates = "0";
+      doStreets = "0";
+      doStreetUpdates = "0";
       doStaticShapes = "1";
-      doStaticShapeUpdates = "1";
+      doStaticShapeUpdates = "0";
       internalName = "theTP";
       canSave = "1";
       canSaveDynamicFields = "1";
@@ -161,8 +161,8 @@ new SimGroup(MissionGroup) {
          outdoorWeight = "1";
          isAIControlled = "0";
          dataBlock = "SpawnSphereMarker";
-         position = "-490 -8135 170";
-         rotation = "1 0 0 0";
+         position = "-800 -8290 163";
+         rotation = "0 0 1 180";
          scale = "1 1 1";
          canSave = "1";
          canSaveDynamicFields = "1";
@@ -311,17 +311,48 @@ new SimGroup(MissionGroup) {
       canSave = "1";
       canSaveDynamicFields = "1";
    };
-   new Item() {
+   new Item(myHealthKit) {
       static = "1";
       rotate = "1";
       isAIControlled = "0";
       dataBlock = "HealthKitSmall";
-      position = "-511.885 -8146.6 164";
+      position = "-774.113 -7870.77 165.175";
       rotation = "1 0 0 0";
       scale = "1 1 1";
       canSave = "1";
       canSaveDynamicFields = "1";
    };
-
+   new NavMesh(Nav) {
+      fileName = "levels/terrainPager.nav";
+      waterMethod = "Ignore";
+      cellSize = "0.2";
+      cellHeight = "0.2";
+      tileSize = "10";
+      actorHeight = "2";
+      actorClimb = "0.3";
+      actorRadius = "0.5";
+      walkableSlope = "10";
+      smallCharacters = "0";
+      regularCharacters = "1";
+      largeCharacters = "0";
+      vehicles = "0";
+      innerCover = "0";
+      coverDist = "1";
+      peekDist = "0.7";
+      alwaysRender = "0";
+      borderSize = "1";
+      detailSampleDist = "6";
+      detailSampleError = "1";
+      maxEdgeLen = "1086324736";
+      simplificationError = "1.3";
+      minRegionArea = "8";
+      mergeRegionArea = "20";
+      maxPolysPerTile = "128";
+      position = "-659.219 -7835.17 175.031";
+      rotation = "1 0 0 0";
+      scale = "300 420 20";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+   };
 };
 //--- OBJECT WRITE END ---

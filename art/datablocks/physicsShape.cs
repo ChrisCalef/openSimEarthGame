@@ -96,10 +96,10 @@ datablock PhysicsShapeData( M4Physics )
    VisionFov = 120;
    
    // max range to look for items
-   findItemRange = 80;
+   findItemRange = 800;
    
    // min range to look for items, ie if we're this close we found it.
-   foundItemDistance = 1.5;
+   foundItemDistance = 2.25;
    
    // the type of object to search for when looking for targets
    targetObjectTypes = $TypeMasks::PlayerObjectType;

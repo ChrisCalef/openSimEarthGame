@@ -5,8 +5,8 @@ singleton TSShapeConstructor(M4Dts)
 
 function M4Dts::onLoad(%this)
 {
-   %this.addSequence("art/shapes/Daz3D/Michael4/sequences/TPose.dsq", "ambient", "0", "-1");
-   %this.addSequence("art/shapes/Daz3D/Michael4/sequences/Root4.dsq", "idle", "0", "-1");
+   %this.addSequence("art/shapes/Daz3D/Michael4/sequences/TPose.dsq", "tpose", "0", "-1");
+   %this.addSequence("art/shapes/Daz3D/Michael4/sequences/Root4.dsq", "ambient", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/sequences/CMU_16_22.dsq", "walk", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/sequences/MedRun6.dsq", "run", "0", "-1");
 

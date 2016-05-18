@@ -118,10 +118,18 @@ function PhysicsShape::onStartup(%this)
    
    if (%this.dataBlock $= "M4Physics")
    {
+      
+      %this.setNavMesh("Nav");
+      
       %this.setActionSeq("ambient","ambient");//This might not always be idle, could be just breathing
       %this.setActionSeq("idle","ambient");// and idle could be that plus fidgeting, etc.
       %this.setActionSeq("walk","walk");
-      %this.setActionSeq("run","run");
+      if (getRandom()>0.4)
+         %this.setActionSeq("run","run");
+      else 
+         %this.setActionSeq("run","runscerd");
+         
+      %this.setActionSeq("runscerd","runscerd");
       %this.setActionSeq("fall","runscerd");
       %this.setActionSeq("getup","rSideGetup");   
       %this.setActionSeq("attack","power_punch_down");
@@ -129,7 +137,10 @@ function PhysicsShape::onStartup(%this)
       
       //%this.setIsRecording(true);
       
-      //%this.groundMove();
+      %this.currentAction = "walk";
+      
+      %this.groundMove();
+      
       
       echo("starting up a M4 physics shape!");      
    } 
@@ -154,9 +165,23 @@ function PhysicsShape::onStartup(%this)
    }
 }
 
+function PhysicsShape::openSteerVehicle(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.createVehicle(%clientShape.getPosition(),0);  
+   
+   %clientShape.setOpenSteerMaxForce(3.0);
+   %clientShape.setOpenSteerMaxSpeed(5.0);
+}
+
 function PhysicsShape::orientTo(%this, %dest)
 {
    %pos = isObject(%dest) ? %dest.getPosition() : %dest;
+   
    %this.orientToPos(%pos);
 }
 
@@ -170,7 +195,7 @@ function PhysicsShape::moveTo(%this, %dest, %slowDown)
    
    %this.orientToPos(%pos);
    
-   %this.actionSeq("walk");   
+   %this.actionSeq(%this.currentAction);
    //%obj.atDestination = false;
 }
 
@@ -178,6 +203,7 @@ function PhysicsShape::say(%this, %message)//Testing, does this only work for AI
 {
    chatMessageAll(%this, '\c3%1: %2', %this.getid(), %message);  
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////
 
 //MOVE: these should be in a behaviorTrees folder, or at least a single file.
