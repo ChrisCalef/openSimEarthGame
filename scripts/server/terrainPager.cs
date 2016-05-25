@@ -1,6 +1,7 @@
-// Terrain Pager
+// TerrainPager
 // copyright 2015 Chris Calef
-//$terrGrid[8];
+
+// (This does very little, do we really need it?)
 
 function TerrainPager::UpdateSkybox()
 {

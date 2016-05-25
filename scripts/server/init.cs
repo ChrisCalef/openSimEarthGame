@@ -73,9 +73,12 @@ function initServer()
    // Load up game server support scripts
    exec("./commands.cs");
    exec("./game.cs");
+   
    exec("./openSimEarth.cs");
    exec("./uiForms.cs");
    exec("./MegaMotion.cs");
+   exec("./physicsShape.cs");
+   exec("./terrainPager.cs");
    
 }
 

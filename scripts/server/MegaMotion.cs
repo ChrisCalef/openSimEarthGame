@@ -4,6 +4,7 @@ $addMMProjectID = 241;
 $addMMSceneID = 246;
 $addMMSceneShapeID = 247;
 $addMMShapeGroupID = 333;
+$addMMOpenSteerID = 378;
 
 $MegaMotionFormID = 1;//Testing ground, not a real form.
 
@@ -62,6 +63,7 @@ function setupMegaMotionScenesForm()
    $mmSceneShapeScaleX = %panel.findObjectByInternalName("sceneShapeScaleX");
    $mmSceneShapeScaleY = %panel.findObjectByInternalName("sceneShapeScaleY");
    $mmSceneShapeScaleZ = %panel.findObjectByInternalName("sceneShapeScaleZ");  
+   $mmOpenSteerList = %panel.findObjectByInternalName("sceneShapeOpenSteerList");
    
    //SHAPEPART TAB
    %tab = $mmTabBook.findObjectByInternalName("shapePartTab");
@@ -97,8 +99,6 @@ function setupMegaMotionScenesForm()
    //MOUNT TAB
    //%tab = $mmTabBook.findObjectByInternalName("mountTab");
    //%panel = %tab.findObjectByInternalName("mountPanel");
-   
-   
    
    %query = "SELECT id,name FROM project ORDER BY name;";  
    %resultSet = sqlite.query(%query, 0); 
@@ -145,7 +145,7 @@ function setupMegaMotionScenesForm()
    }   
    
    //behaviorList
-   //Whoops, this one is not a query - we need 
+   //Whoops, getting rid of the list for now, changing back to a text edit.
    
    //groupList
    %query = "SELECT id,name FROM shapeGroup ORDER BY name;";
@@ -169,6 +169,32 @@ function setupMegaMotionScenesForm()
       sqlite.clearResult(%resultSet);
    }
    
+   %query = "SELECT id,name FROM openSteerProfile ORDER BY name;";
+   %resultSet = sqlite.query(%query, 0);
+
+   %id = "0";
+   %name = "None";
+   $mmOpenSteerList.add(%name @ "   " @ %id,%id);
+
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {         
+         //%firstID = sqlite.getColumn(%resultSet, "id");
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %name = sqlite.getColumn(%resultSet, "name");
+            
+            $mmOpenSteerList.add(%name @ "   " @ %id,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         //if (%firstID>0) 
+            //$mmShapeList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+   
    %query = "SELECT id,name FROM px3Joint ORDER BY name;";  
    %resultSet = sqlite.query(%query, 0); 
    if (%resultSet)
@@ -189,6 +215,8 @@ function setupMegaMotionScenesForm()
       }
       sqlite.clearResult(%resultSet);
    }   
+   
+   
 }
 
 function updateMegaMotionForm()
@@ -207,9 +235,6 @@ function updateMegaMotionForm()
    if (%selectedTab == %sceneShapeTab)
    {
       //save scene shape data
-      %sceneShapeId = $mmSceneShapeList.getSelected();
-      if (%sceneShapeId<=0)
-         return;
       //Maybe, first check for each item to be worth saving, ie is valid at least.
       
       updateMMSceneShapeTab();
@@ -238,6 +263,10 @@ function updateMegaMotionForm()
 
 function updateMMSceneShapeTab()
 {
+   %sceneShapeId = $mmSceneShapeList.getSelected();
+   if (%sceneShapeId<=0)
+      return;
+      
    echo("UPDATING SCENE SHAPE TAB, behavior " @ $mmSceneShapeBehaviorTree.getText() );
    %pos_x = $mmSceneShapePositionX.getText();
    %pos_y = $mmSceneShapePositionY.getText();
@@ -276,6 +305,46 @@ function updateMMSceneShapeTab()
       %query = "UPDATE sceneShape SET behavior_tree='" @ %behavior_tree @ "' WHERE id=" @ %sceneShapeId @ ";";
       sqlite.query(%query, 0); 
    }  
+   
+   
+   %openSteer_id = $mmOpenSteerList.getSelected();
+   if ((%openSteer_id>0)&&(%openSteer_id!=$mmOpenSteerId))
+   {
+      %query = "UPDATE sceneShape SET openSteer_id=" @ %openSteer_id @ " WHERE id=" @ %sceneShapeId @ ";";
+      echo("changing openSteer profile! " @ %query);
+      sqlite.query(%query, 0); 
+      
+   }
+   
+   if (%openSteer_id>0)
+   {
+      %tab = $mmTabBook.findObjectByInternalName("sceneShapeTab");
+      %panel = %tab.findObjectByInternalName("sceneShapePanel");
+   
+      %mass = %panel.findObjectByInternalName("sceneShapeOpenSteerMass");
+      %radius = %panel.findObjectByInternalName("sceneShapeOpenSteerRadius");
+      %maxForce = %panel.findObjectByInternalName("sceneShapeOpenSteerMaxForce");
+      %maxSpeed = %panel.findObjectByInternalName("sceneShapeOpenSteerMaxSpeed");
+      %wanderChance = %panel.findObjectByInternalName("sceneShapeOpenSteerWanderChance");
+      %wanderWeight = %panel.findObjectByInternalName("sceneShapeOpenSteerWanderWeight");
+      %seekTarget = %panel.findObjectByInternalName("sceneShapeOpenSteerSeekTarget");
+      %avoidTarget = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidTarget");
+      %seekNeighbor = %panel.findObjectByInternalName("sceneShapeOpenSteerSeekNeighbor");
+      %avoidNeighbor = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidNeighbor");
+      %avoidEdge = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidEdge");
+      %detectEdge = %panel.findObjectByInternalName("sceneShapeOpenSteerDetectEdge");      
+      
+      %query = "UPDATE openSteerProfile SET " @
+               "mass=" @ %mass.getText() @ ",radius=" @ %radius.getText() @ 
+               ",maxForce=" @ %maxForce.getText() @ ",maxSpeed=" @ %maxSpeed.getText() @ 
+               ",wanderChance=" @ %wanderChance.getText() @ ",wanderWeight=" @ %wanderWeight.getText() @ 
+               ",seekTargetWeight=" @ %seekTarget.getText() @ ",avoidTargetWeight=" @ %avoidTarget.getText() @ 
+               ",seekNeighborWeight=" @ %seekNeighbor.getText() @ ",avoidNeighborWeight=" @ %avoidNeighbor.getText() @ 
+               ",avoidNavMeshEdgeWeight=" @ %avoidEdge.getText() @ ",detectNavMeshEdgeRange=" @ %detectEdge.getText() @ 
+               " WHERE id=" @ %openSteer_id @ ";";
+      echo("Changing openSteer data: \n " @ %query);
+      sqlite.query(%query,0);
+   }
 }
 
 function updateMMShapePartTab()
@@ -768,7 +837,7 @@ function loadMMScene(%id)
    %grav = true;
    %ambient = true;
 
-	%query = "SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree," @ 
+	%query = "SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,openSteer_id," @ 
 	         "p.x as pos_x,p.y as pos_y,p.z as pos_z," @ 
 	         "r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle," @ 
 	         "sc.x as scale_x,sc.y as scale_y,sc.z as scale_z," @ 
@@ -795,6 +864,7 @@ function loadMMScene(%id)
          %shape_id = sqlite.getColumn(%resultSet, "shape_id");
          %shapeGroup_id = sqlite.getColumn(%resultSet, "shapeGroup_id");//not used yet
          %behaviorTree = sqlite.getColumn(%resultSet, "behavior_tree");
+         %openSteer_id = sqlite.getColumn(%resultSet, "openSteer_id");
          
          %pos_x = sqlite.getColumn(%resultSet, "pos_x");
          %pos_y = sqlite.getColumn(%resultSet, "pos_y");
@@ -851,6 +921,7 @@ function loadMMScene(%id)
             isDynamic = %dyn;
             sceneShapeID = %sceneShape_id;
             sceneID = %id;
+            openSteerID = %openSteer_id;
             targetType = "Health";//"AmmoClip" "Player"
             isDirty = false;
          };
@@ -921,7 +992,7 @@ function selectMMSceneShape()
         
    %scene_shape_id = $mmSceneShapeList.getSelected();
    //%query = "SELECT * FROM sceneShape WHERE id=" @ %sceneShapeId @ ";";  
-	%query = "SELECT shape_id,ss.name,shapeGroup_id,behavior_tree," @ 
+	%query = "SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,openSteer_id," @ 
 	         "ss.pos_id AS pos_id,p.x AS pos_x,p.y AS pos_y,p.z AS pos_z," @ 
 	         "ss.rot_id AS rot_id,r.x AS rot_x,r.y AS rot_y,r.z AS rot_z,r.angle AS rot_angle," @ 
 	         "ss.scale_id AS scale_id,sc.x AS scale_x,sc.y AS scale_y,sc.z AS scale_z " @ 
@@ -941,6 +1012,8 @@ function selectMMSceneShape()
       $mmShapeId = %shape_id;
       %group_id = sqlite.getColumn(%resultSet, "shapeGroup_id");
       $mmShapeGroupId = %group_id;
+      %openSteer_id = sqlite.getColumn(%resultSet, "openSteer_id");
+      $mmOpenSteerId = %openSteer_id;
       %pos_x = sqlite.getColumn(%resultSet, "pos_x");
       %pos_y = sqlite.getColumn(%resultSet, "pos_y");
       %pos_z = sqlite.getColumn(%resultSet, "pos_z");
@@ -959,6 +1032,7 @@ function selectMMSceneShape()
       
       $mmSceneShapeBehaviorTree.setText(%behavior_tree); 
       $mmShapeGroupList.setSelected(%group_id);
+      $mmOpenSteerList.setSelected(%openSteer_id);
       
       $mmSceneShapePositionX.setText(%pos_x);
       $mmSceneShapePositionY.setText(%pos_y);
@@ -1557,6 +1631,95 @@ function addMMSceneShapeBlock()
    addMMShapeGroupWindow.delete();
       
    exposeMegaMotionScenesForm();
+}
+
+//////////////////////////////////////////////////////////////
+
+
+function addMMOpenSteer()
+{
+   makeSqlGuiForm($addMMOpenSteerID);
+}
+
+function reallyAddMMOpenSteer()
+{
+   if (addMMOpenSteerWindow.isVisible())
+   {
+      %name = addMMOpenSteerWindow.findObjectByInternalName("nameEdit").getText(); 
+      
+      %query = "INSERT INTO openSteerProfile (name) VALUES ('" @ %name @ "');";
+      sqlite.query(%query,0);
+      
+      addMMOpenSteerWindow.delete();
+      
+      exposeMegaMotionScenesForm();
+   }
+}
+
+function deleteMMOpenSteer()
+{
+   %openSteer_id = $mmOpenSteerList.getSelected();
+   if (%openSteer_id<=0)
+      return;
+      
+   MessageBoxOKCancel( "Warning", 
+      "This will permanently delete this OpenSteer Profile! Are you completely sure?", 
+      "reallyDeleteMMOpenSteer();",
+      "" ); 
+      
+}
+   
+function reallyDeleteMMOpenSteer()
+{
+   %openSteer_id = $mmOpenSteerList.getSelected();
+      
+   %query = "DELETE FROM openSteerProfile WHERE id=" @ %openSteer_id @ ";";
+   sqlite.query(%query,0);
+   
+   exposeMegaMotionScenesForm();
+}
+
+
+function selectMMOpenSteer()
+{   
+   %openSteerID = $mmOpenSteerList.getSelected();
+   if (%openSteerID<=0)
+      return;
+      
+   %tab = $mmTabBook.findObjectByInternalName("sceneShapeTab");
+   %panel = %tab.findObjectByInternalName("sceneShapePanel");
+   
+   %mass = %panel.findObjectByInternalName("sceneShapeOpenSteerMass");
+   %radius = %panel.findObjectByInternalName("sceneShapeOpenSteerRadius");
+   %maxForce = %panel.findObjectByInternalName("sceneShapeOpenSteerMaxForce");
+   %maxSpeed = %panel.findObjectByInternalName("sceneShapeOpenSteerMaxSpeed");
+   %wanderChance = %panel.findObjectByInternalName("sceneShapeOpenSteerWanderChance");
+   %wanderWeight = %panel.findObjectByInternalName("sceneShapeOpenSteerWanderWeight");
+   %seekTarget = %panel.findObjectByInternalName("sceneShapeOpenSteerSeekTarget");
+   %avoidTarget = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidTarget");
+   %seekNeighbor = %panel.findObjectByInternalName("sceneShapeOpenSteerSeekNeighbor");
+   %avoidNeighbor = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidNeighbor");
+   %avoidEdge = %panel.findObjectByInternalName("sceneShapeOpenSteerAvoidEdge");
+   %detectEdge = %panel.findObjectByInternalName("sceneShapeOpenSteerDetectEdge");
+   
+   %query = "SELECT * FROM openSteerProfile WHERE id=" @ %openSteerID @ ";";
+   %resultSet = sqlite.query(%query,0);
+   
+   if (%resultSet)
+   {
+      %mass.setText(sqlite.getColumn(%resultSet,"mass"));
+      %radius.setText(sqlite.getColumn(%resultSet,"radius"));
+      %maxForce.setText(sqlite.getColumn(%resultSet,"maxForce"));
+      %maxSpeed.setText(sqlite.getColumn(%resultSet,"maxSpeed"));
+      %wanderChance.setText(sqlite.getColumn(%resultSet,"wanderChance"));
+      %wanderWeight.setText(sqlite.getColumn(%resultSet,"wanderWeight"));
+      %seekTarget.setText(sqlite.getColumn(%resultSet,"seekTargetWeight"));
+      %avoidTarget.setText(sqlite.getColumn(%resultSet,"avoidTargetWeight"));
+      %seekNeighbor.setText(sqlite.getColumn(%resultSet,"seekNeighborWeight"));
+      %avoidNeighbor.setText(sqlite.getColumn(%resultSet,"avoidNeighborWeight"));
+      %avoidEdge.setText(sqlite.getColumn(%resultSet,"avoidNavMeshEdgeWeight"));
+      %detectEdge.setText(sqlite.getColumn(%resultSet,"detectNavMeshEdgeRange")); 
+   }
 }
 
    /*
