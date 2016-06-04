@@ -1,4 +1,5 @@
 
+
 $MegaMotionScenesFormID = 159;
 $addMMProjectID = 241;
 $addMMSceneID = 246;
@@ -6,10 +7,18 @@ $addMMSceneShapeID = 247;
 $addMMShapeGroupID = 333;
 $addMMOpenSteerID = 378;
 
+$MegaMotionSequenceWindowID = 395;
+
 $MegaMotionFormID = 1;//Testing ground, not a real form.
 
 $mmLastProject = 0;
 $mmLastScene = 0;  
+
+$mmLoadedScenes = 0;
+$mmLoadedShapes = 0;
+
+$mmSelectedShape = 0;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //$lastScene = 0; //Store selected scene, for when we re-expose form, but we're working on a scene
@@ -48,7 +57,19 @@ function setupMegaMotionScenesForm()
     
    $mmTabBook = MegaMotionScenes.findObjectByInternalName("mmTabBook");    
 
-   //SCENE TAB
+
+   setupMMSceneShapeTab();
+   
+   setupMMShapePartTab();
+   
+   setupMMSequenceTab();
+
+   //setupMMShapeMountTab();//?
+   
+}
+
+function setupMMSceneShapeTab()
+{
    %tab = $mmTabBook.findObjectByInternalName("sceneShapeTab");
    %panel = %tab.findObjectByInternalName("sceneShapePanel");
    $mmSceneShapeBehaviorTree = %panel.findObjectByInternalName("sceneShapeBehaviorTree");
@@ -64,6 +85,10 @@ function setupMegaMotionScenesForm()
    $mmSceneShapeScaleY = %panel.findObjectByInternalName("sceneShapeScaleY");
    $mmSceneShapeScaleZ = %panel.findObjectByInternalName("sceneShapeScaleZ");  
    $mmOpenSteerList = %panel.findObjectByInternalName("sceneShapeOpenSteerList");
+}
+
+function setupMMShapePartTab()
+{
    
    //SHAPEPART TAB
    %tab = $mmTabBook.findObjectByInternalName("shapePartTab");
@@ -91,14 +116,7 @@ function setupMegaMotionScenesForm()
    $mmJointTypeList.add("D6","5");
    $mmJointTypeList.setSelected(5);
    
-   //BEHAVIOR TAB
-   //%tab = $mmTabBook.findObjectByInternalName("behaviorTab");
-   //%panel = %tab.findObjectByInternalName("behaviorPanel");
    
-   
-   //MOUNT TAB
-   //%tab = $mmTabBook.findObjectByInternalName("mountTab");
-   //%panel = %tab.findObjectByInternalName("mountPanel");
    
    %query = "SELECT id,name FROM project ORDER BY name;";  
    %resultSet = sqlite.query(%query, 0); 
@@ -215,7 +233,41 @@ function setupMegaMotionScenesForm()
       }
       sqlite.clearResult(%resultSet);
    }   
+}
+
+function setupMMSequenceTab()
+{
    
+   %tab = $mmTabBook.findObjectByInternalName("sequenceTab");
+   %panel = %tab.findObjectByInternalName("sequencePanel");
+   
+   $mmSequenceList = %panel.findObjectByInternalName("sequenceList");
+   $mmSequenceActionList = %panel.findObjectByInternalName("sequenceActionList");
+   $mmSequenceFileText = %panel.findObjectByInternalName("sequenceFileText");
+   
+   %query = "SELECT id,name FROM action ORDER BY name;";  
+   %resultSet = sqlite.query(%query, 0); 
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {         
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %name = sqlite.getColumn(%resultSet, "name");
+            
+            $mmSequenceActionList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   if (!isObject(MegaMotionSequenceWindow))
+   {
+      makeSqlGuiForm($MegaMotionSequenceWindowID);
+      setupMegaMotionSequenceWindow();
+   }
    
 }
 
@@ -227,7 +279,7 @@ function updateMegaMotionForm()
    //NOTE: these need to be fixed anytime we add another tab.
    %sceneShapeTab = 2;      
    %partsTab = 1;
-   %behaviorsTab = 0;
+   %sequencesTab = 0;
    
    %selectedTab = $mmTabBook.getSelectedPage();
    
@@ -250,15 +302,16 @@ function updateMegaMotionForm()
       updateMMShapePartTab();      
       
    }
-   else if (%selectedTab == %behaviorsTab)
+   else if (%selectedTab == %partsTab)
    {
-      //save behavior data
-      
+      //save sequence data
    }
    
-   
-   unloadMMScene($mmSceneList.getSelected());
-   loadMMScene($mmSceneList.getSelected());
+   if ($mmLoadedScenes>0)
+   {//FIX: need to track which scenes are currently loaded, and reload all of them and only them.)
+      unloadMMScene($mmSceneList.getSelected());
+      loadMMScene($mmSceneList.getSelected());
+   }
 }
 
 function updateMMSceneShapeTab()
@@ -310,7 +363,7 @@ function updateMMSceneShapeTab()
    %openSteer_id = $mmOpenSteerList.getSelected();
    if ((%openSteer_id>0)&&(%openSteer_id!=$mmOpenSteerId))
    {
-      %query = "UPDATE sceneShape SET openSteer_id=" @ %openSteer_id @ " WHERE id=" @ %sceneShapeId @ ";";
+      %query = "UPDATE sceneShape SET openSteerProfile_id=" @ %openSteer_id @ " WHERE id=" @ %sceneShapeId @ ";";
       echo("changing openSteer profile! " @ %query);
       sqlite.query(%query, 0); 
       
@@ -473,42 +526,46 @@ function MegaMotionSaveMission()
    
    
    ///////////////////////////   
-   //For openSimEarth, we need to save many things to the database instead of to 
-   //the mission. Starting with TSStatics.
-   $tempStaticGroup = new SimSet();
-   $tempRoadGroup = new SimSet();
-   $tempForestGroup = new SimSet();
-   $tempSceneShapes = new SimSet();
+   //For terrainPager/openSimEarth, we need to save many things to the database instead of to 
+   //the mission. Do not do this if we don't have a TerrainPager.
+   if (isObject(theTP))//FIX!!! Search for objects of type TerrainPager, regardless of name.
+   {
+      %tempStaticGroup = new SimSet();
+      %tempRoadGroup = new SimSet();
+      %tempForestGroup = new SimSet();
+      %tempSceneShapes = new SimSet();
+      
+      if ($pref::OpenSimEarth::saveSceneShapes)
+         osePullSceneShapesAndSave(%tempSceneShapes);
+      else
+         osePullSceneShapes(%tempSceneShapes);
+      
+      if ($pref::OpenSimEarth::saveStatics)
+         osePullStaticsAndSave(%tempStaticGroup);
+      else
+         osePullStatics(%tempStaticGroup);
+      
+      if ($pref::OpenSimEarth::saveRoads)
+         osePullRoadsAndSave(%tempRoadGroup);
+      else
+         osePullRoads(%tempRoadGroup);
+      
+      //if ($pref::OpenSimEarth::saveForests==false)
+      //   osePullForest($tempForestGroup);
    
-   if ($pref::OpenSimEarth::saveSceneShapes)
-      osePullSceneShapesAndSave($tempSceneShapes);
-   else
-      osePullSceneShapes($tempSceneShapes);
-   
-   if ($pref::OpenSimEarth::saveStatics)
-      osePullStaticsAndSave($tempStaticGroup);
-   else
-      osePullStatics($tempStaticGroup);
-   
-   
-   //TEMP - should actually define this so it's possible to save to mission
-   if ($pref::OpenSimEarth::saveRoads)
-      osePullRoadsAndSave($tempRoadGroup);
-   else
-      osePullRoads($tempRoadGroup);
-   
-   
-   //if ($pref::OpenSimEarth::saveForests==false)
-   //   osePullForest($tempForestGroup);
-   
+   }
    
    if(EWorldEditor.isDirty || ETerrainEditor.isMissionDirty)
       MissionGroup.save($Server::MissionFile);
       
-   osePushSceneShapes($tempSceneShapes);
-   osePushStatics($tempStaticGroup);
-   osePushRoads($tempRoadGroup);
-   //osePushForest($tempForestGroup);
+   if (isObject(theTP))//FIX!!! Search for objects of type TerrainPager, regardless of name.
+   {   
+      osePushSceneShapes(%tempSceneShapes);
+      osePushStatics(%tempStaticGroup);
+      osePushRoads(%tempRoadGroup);
+      //osePushForest($tempForestGroup);
+   }
+   
    ///////////////////////////   
    
    
@@ -837,8 +894,8 @@ function loadMMScene(%id)
    %grav = true;
    %ambient = true;
 
-	%query = "SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,openSteer_id," @ 
-	         "p.x as pos_x,p.y as pos_y,p.z as pos_z," @ 
+	%query = "SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,openSteerProfile_id," @ 
+	         "actionProfile_id,p.x as pos_x,p.y as pos_y,p.z as pos_z," @ 
 	         "r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle," @ 
 	         "sc.x as scale_x,sc.y as scale_y,sc.z as scale_z," @ 
 	         "sp.x as scene_pos_x,sp.y as scene_pos_y,sp.z as scene_pos_z," @ 
@@ -864,7 +921,8 @@ function loadMMScene(%id)
          %shape_id = sqlite.getColumn(%resultSet, "shape_id");
          %shapeGroup_id = sqlite.getColumn(%resultSet, "shapeGroup_id");//not used yet
          %behaviorTree = sqlite.getColumn(%resultSet, "behavior_tree");
-         %openSteer_id = sqlite.getColumn(%resultSet, "openSteer_id");
+         %openSteer_id = sqlite.getColumn(%resultSet, "openSteerProfile_id");
+         %actionProfile_id = sqlite.getColumn(%resultSet, "actionProfile_id");
          
          %pos_x = sqlite.getColumn(%resultSet, "pos_x");
          %pos_y = sqlite.getColumn(%resultSet, "pos_y");
@@ -919,9 +977,11 @@ function loadMMScene(%id)
             radiusDamage = "0";
             hasGravity = %grav;
             isDynamic = %dyn;
+            shapeID = %shape_id;
             sceneShapeID = %sceneShape_id;
             sceneID = %id;
             openSteerID = %openSteer_id;
+            actionProfileID = %actionProfile_id;
             targetType = "Health";//"AmmoClip" "Player"
             isDirty = false;
          };
@@ -941,21 +1001,97 @@ function loadMMScene(%id)
       }
    }   
    sqlite.clearResult(%resultSet);
-   //schedule(40, 0, "startRecording");
+   
+   $mmLoadedScenes++;
+   
+   schedule(40, 0, "loadMMKeyframeSets");
 } 
 
-//function testSpatialite()
-//{
-//   //%query = "CREATE TABLE spatialTest ( id INTEGER, name TEXT NOT NULL, geom BLOB NOT NULL);";
-//   %query = "INSERT INTO spatialTest ( id , name, geom ) VALUES (1,'Test01',GeomFromText('POINT(1 2)'));";
-   
-//   %result = sqlite.query(%query, 0);
-	
-//   if (%result)
-//      echo("spatialite inserted into a table with a geom!");
-//   else
-//      echo("spatialite failed to insert into a table with a geom!  "  );
-//}
+function loadMMKeyframeSets()
+{   
+   %scene_id = $mmSceneList.getSelected();
+   if ((%scene_id<=0)||(SceneShapes.getCount()==0))
+      return;
+  
+  //First, make a distinct list of existing shapes, discarding duplicates.
+   %numShapes = 0; //(Consider making this list global so we have it later.)
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);
+      %shape_id = %shape.shapeID;  
+      if (%numShapes==0)
+      {
+         %shapes[%numShapes] = %shape;
+         %shape_ids[%numShapes] = %shape_id;
+         %numShapes++;
+      }
+      else
+      {
+         %found = 0;
+         for (%j=0;%j<%numShapes;%j++)
+            if (%shapes[%j]==%shape_id)
+               %found=1;         
+         if (%found==0)
+         {
+            %shapes[%numShapes] = %shape;
+            %shape_ids[%numShapes] = %shape_id;
+            %numShapes++;
+         }
+      }
+   }
+   if (%numShapes==0)
+      return;
+
+   for (%i=0;%i<%numShapes;%i++)
+   {
+      %shape = %shapes[%i];
+      %shape_id = %shape_ids[%i];
+      
+      %query = "SELECT * FROM keyframeSet WHERE shape_id=" @ %shape_id @ ";";
+      %resultSet = sqlite.query(%query,0);        
+      while (!sqlite.endOfResult(%resultSet))
+      { 
+         %set_id = sqlite.getColumn(%resultSet,"id");
+         %sequence = sqlite.getColumn(%resultSet,"sequence_file");
+         %name = sqlite.getColumn(%resultSet,"name");
+         
+         %shape.addKeyframeSet(%sequence);
+         
+         %query2 = "SELECT * FROM keyframeSeries WHERE set_id=" @ %set_id @ ";";
+         %resultSet2 = sqlite.query(%query2,0);
+         while (!sqlite.endOfResult(%resultSet2))
+         {
+            %series_id = sqlite.getColumn(%resultSet2,"id");
+            %type = sqlite.getColumn(%resultSet2,"type");
+            %node = sqlite.getColumn(%resultSet2,"node");
+            
+            %shape.addKeyframeSeries(%type,%node);
+            
+            %query3 = "SELECT * FROM keyframe WHERE series_id=" @ %series_id @ ";";
+            %resultSet3 = sqlite.query(%query3,0);
+            while (!sqlite.endOfResult(%resultSet3))
+            {
+               %frame = sqlite.getColumn(%resultSet3,"frame");
+               %x = sqlite.getColumn(%resultSet3,"x");
+               %y = sqlite.getColumn(%resultSet3,"y");
+               %z = sqlite.getColumn(%resultSet3,"z");
+               
+               %shape.addKeyframe(%frame,%x,%y,%z);
+               
+               echo("added keyframe: " @ %frame @ " " @ %x @ " " @ %y @ " " @ %z );
+               
+               sqlite.nextRow(%resultSet3); 
+            }            
+            sqlite.nextRow(%resultSet2); 
+         }
+         
+         %shape.applyKeyframeSet();
+         
+         sqlite.nextRow(%resultSet);          
+      }
+   }   
+}
+
 
 function unloadMMScene(%id)
 {
@@ -979,7 +1115,9 @@ function unloadMMScene(%id)
          if (%shapesCount>0)
             %i=-1;//So start over every time we remove one, until we loop through and remove none.
          else 
-            %i=1;//Or else we run out of shapes, and just need to exit the loop.         
+            %i=1;//Or else we run out of shapes, and just need to exit the loop.   
+            
+         $mmLoadedScenes--;
       }
    }   
 }
@@ -992,7 +1130,7 @@ function selectMMSceneShape()
         
    %scene_shape_id = $mmSceneShapeList.getSelected();
    //%query = "SELECT * FROM sceneShape WHERE id=" @ %sceneShapeId @ ";";  
-	%query = "SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,openSteer_id," @ 
+	%query = "SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,openSteerProfile_id," @ 
 	         "ss.pos_id AS pos_id,p.x AS pos_x,p.y AS pos_y,p.z AS pos_z," @ 
 	         "ss.rot_id AS rot_id,r.x AS rot_x,r.y AS rot_y,r.z AS rot_z,r.angle AS rot_angle," @ 
 	         "ss.scale_id AS scale_id,sc.x AS scale_x,sc.y AS scale_y,sc.z AS scale_z " @ 
@@ -1012,7 +1150,7 @@ function selectMMSceneShape()
       $mmShapeId = %shape_id;
       %group_id = sqlite.getColumn(%resultSet, "shapeGroup_id");
       $mmShapeGroupId = %group_id;
-      %openSteer_id = sqlite.getColumn(%resultSet, "openSteer_id");
+      %openSteer_id = sqlite.getColumn(%resultSet, "openSteerProfile_id");
       $mmOpenSteerId = %openSteer_id;
       %pos_x = sqlite.getColumn(%resultSet, "pos_x");
       %pos_y = sqlite.getColumn(%resultSet, "pos_y");
@@ -1049,6 +1187,22 @@ function selectMMSceneShape()
       
       sqlite.clearResult(%resultSet);
    }
+   
+   $mmSequenceList.clear();
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
+   {
+      %obj = SceneShapes.getObject(%i);  
+      if (%obj.sceneShapeID==%scene_shape_id)
+      {
+         $mmSelectedShape = %obj;//Maybe? In case we need it later.         
+         %numSeqs = $mmSelectedShape.getNumSeqs();
+         for (%j=0;%j<%numSeqs;%j++)
+         {
+            %name = $mmSelectedShape.getSeqName(%j);
+            $mmSequenceList.add(%name,%j);         
+         }
+      }
+   }
 }
 
 function addMMSceneShape()
@@ -1066,8 +1220,12 @@ function deleteMMSceneShape()
    reallyDeleteMMSceneShape($mmSceneShapeList.getSelected());
    
    exposeMegaMotionScenesForm();   
-   unloadMMScene($mmSceneList.getSelected());
-   loadMMScene($mmSceneList.getSelected());
+   
+   if ($mmLoadedScenes>0)
+   {
+      unloadMMScene($mmSceneList.getSelected());
+      loadMMScene($mmSceneList.getSelected());
+   }
 }
 
 function reallyDeleteMMSceneShape(%id)
@@ -1204,8 +1362,11 @@ function reassignShape()
    echo("reassigning shape: " @ %query );
    sqlite.query(%query,0);
    
-   unloadMMScene($mmSceneList.getSelected());
-   loadMMScene($mmSceneList.getSelected());
+   if ($mmLoadedScenes>0)
+   {
+      unloadMMScene($mmSceneList.getSelected());
+      loadMMScene($mmSceneList.getSelected());
+   }
    
    $mmSceneShapeList.setSelected(%sceneShapeId);
 }
@@ -1560,9 +1721,12 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
    addMMSceneShapeWindow.delete();
       
    exposeMegaMotionScenesForm();
-   unloadMMScene($mmSceneList.getSelected());
-   loadMMScene($mmSceneList.getSelected());
-
+   
+   if ($mmLoadedScenes>0)
+   {
+      unloadMMScene($mmSceneList.getSelected());
+      loadMMScene($mmSceneList.getSelected());
+   }
 }
 
 
@@ -1624,9 +1788,11 @@ function addMMSceneShapeBlock()
    echo("finished adding characters, clock  " @ getClock() @ " elapsed " @ getClock()-%lastClock);
    %lastClock = getClock();
    
-   unloadMMScene($mmSceneList.getSelected());
-   loadMMScene($mmSceneList.getSelected());
-   echo("reloaded scene, clock  " @ getClock() @ " elapsed " @ getClock()-%lastClock);
+   if ($mmLoadedScenes>0)
+   {
+      unloadMMScene($mmSceneList.getSelected());
+      loadMMScene($mmSceneList.getSelected());
+   }
   
    addMMShapeGroupWindow.delete();
       
@@ -1722,128 +1888,404 @@ function selectMMOpenSteer()
    }
 }
 
-   /*
-   
-   //OLD WAY, too slow, replaced by engine function addSceneShapeBlock(%scene_id,%shape_id,%group_id).
-function addMMSceneShapeBlock() 
-{   
-   %scene_id = $mmSceneList.getSelected();
-   %shape_id = addMMSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
 
-   %groupList = addMMSceneShapeWindow.findObjectByInternalName("groupList");
-   %group_id = %groupList.getSelected();
-   %group_name = %groupList.getText();
-   
-   if ((%scene_id<=0)||(%shape_id<=0)||(%group_id<=0))
+
+//////////////////////////////////////////////////////////////////////////////////
+//Sequence Tab
+
+function selectMMSequence()
+{
+   if (($mmSequenceList.getSelected()<=0)||($mmSelectedShape<=0))
    {
-      echo("Please select a scene, shape, and group before creating a block.");
+      $mmSequenceFileText.setText("");
       return;
    }
+   %seq_id = $mmSequenceList.getSelected();
+   $mmSequenceFileText.setText($mmSelectedShape.getSeqFilename(%seq_id));
    
-   %behaviorTree = addMMSceneShapeWindow.findObjectByInternalName("behaviorTree").getText();
-   
-   %pos_x = addMMSceneShapeWindow.findObjectByInternalName("shapePositionX").getText();
-   %pos_y = addMMSceneShapeWindow.findObjectByInternalName("shapePositionY").getText();
-   %pos_z = addMMSceneShapeWindow.findObjectByInternalName("shapePositionZ").getText(); 
-   
-   %ori_x = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationX").getText();
-   %ori_y = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationY").getText();
-   %ori_z = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationZ").getText(); 
-   %ori_a = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationAngle").getText();
-   
-   %scale_x = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleX").getText();
-   %scale_y = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleY").getText();
-   %scale_z = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleZ").getText(); 
-   
-   %blockX = addMMSceneShapeWindow.findObjectByInternalName("blockCountX").getText(); 
-   %blockY = addMMSceneShapeWindow.findObjectByInternalName("blockCountY").getText();
-    
-   %blockPaddingX = addMMSceneShapeWindow.findObjectByInternalName("blockPaddingX").getText(); 
-   %blockPaddingY = addMMSceneShapeWindow.findObjectByInternalName("blockPaddingY").getText(); 
-   
-   %blockVariationX = addMMSceneShapeWindow.findObjectByInternalName("blockVariationX").getText(); 
-   %blockVariationY = addMMSceneShapeWindow.findObjectByInternalName("blockVariationY").getText(); 
-   
-   echo("Adding scene shape block! X " @ %blockX @ "  Y " @ %blockY );
-   %lastClock = getClock();
-   for (%i=0;%i<%blockX;%i++)
+   if (MegaMotionSequenceWindow.isVisible())
    {
-      for (%j=0;%j<%blockY;%j++)
-      {  //Note: these use %i and -%j only for the arbitrary reasoning that the leader should be
-         //in the front left position in the block. -%i would give front right, +%j goes to rear.
-         echo("adding character " @ %name @ ", clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         %position_x = (%pos_x + (%i*%blockPaddingX) + ((getRandom()*%blockVariationX) - (%blockVariationX/2)));
-         %position_y = (%pos_y + (-%j*%blockPaddingY) + ((getRandom()*%blockVariationY) - (%blockVariationY/2)));      
-         %position = %position_x @ " " @ %position_y @ " " @ %pos_z;
-         
-         %transform = "0 0 0 " @ %ori_x @ " " @ %ori_y @ " " @ %ori_z @ " " @ mDegToRad(%ori_a) ; 
-         %finalPos = MatrixMulVector(%transform,%position);
-         //%matrix = ???(%ori_x,%ori_y,%ori_z,%ori_a)
-         //MatrixMulVector
-         
-         echo("position " @ %finalPos @ ", clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         %name = %group_name @ "_" @ %i @ "_" @ %j;
-         
-         %query = "INSERT INTO sceneShape (name,scene_id,shape_id) " @
-            " VALUES ('" @ %name @ "'," @ %scene_id @ "," @ %shape_id @ ");";
-         sqlite.query(%query,0);
-         echo("INSERT INTO sceneShape , clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         %final_x = getWord(%finalPos,0);
-         %final_y = getWord(%finalPos,1);
-         %final_z = getWord(%finalPos,2);
-         
-         %ssID = 0;
-         %query = "SELECT id FROM sceneShape WHERE name='" @ %name @ "' AND scene_id=" @ %scene_id @ ";";
-         %resultSet = sqlite.query(%query,0);
-         if (sqlite.numRows(%resultSet)==1)
-         {
-            %ss_id = sqlite.getColumn(%resultSet, "id");
-            sqlite.clearResult(%resultSet);
-         }
-         echo("SELECT id, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         //First pass: settting position on global axes, but rotating/scaling according to input.
-         //Next step, rotate the positions for the block, not just the shapes.
-         %query = "INSERT INTO vector3 (x,y,z) VALUES (" @ %final_x @ "," @ %final_y @ "," @ %final_z @ ");";
-         sqlite.query(%query,0);
-         echo("INSERT INTO vector3 position, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         %query = "UPDATE sceneShape SET pos_id=last_insert_rowid() WHERE id=" @ %ss_id @ ";";
-         sqlite.query(%query, 0);  
-         echo("UPDATE sceneShape, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         %query = "INSERT INTO rotation (x,y,z,angle) VALUES (" @ %ori_x @ "," @ %ori_y @ "," @ 
-                        %ori_z @  "," @ %ori_a @ ");";      
-         sqlite.query(%query,0);
-         echo("INSERT INTO rotation, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         %query = "UPDATE sceneShape SET rot_id=last_insert_rowid() WHERE id=" @ %ss_id @ ";";
-         sqlite.query(%query, 0); 
-         echo("UPDATE sceneShape, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
-         %query = "INSERT INTO vector3 (x,y,z) VALUES (" @ %scale_x @ "," @ %scale_y @ "," @ %scale_z @ ");";      
-         sqlite.query(%query,0);
-         echo("INSERT INTO vector3 scale, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         %query = "UPDATE sceneShape SET scale_id=last_insert_rowid() WHERE id=" @ %ss_id @ ";";
-         sqlite.query(%query, 0);  
-         echo("UPDATE sceneShape, clock " @ getClock() @ " elapsed " @ getClock()-%lastClock);
-         %lastClock = getClock();
-         
+      $mmSequenceSlider.range = "0 " @ $mmSelectedShape.getSeqFrames(%seq_id);
+      $mmSequenceSlider.value = 0;
+   }
+   
+   $mmSelectedShape.playSeqByNum($mmSequenceList.getSelected());
+   $mmSelectedShape.pauseSeq();
+   $mmSelectedShape.setSeqPos(0);
+}
 
-      }
+function assignMMSequenceAction()
+{   
+   %profile_id = $mmSelectedShape.actionProfileID;
+   %seqFile = $mmSequenceFileText.getValue();
+   %action_id = $mmSequenceActionList.getSelected();
+   
+   if ((%profile_id<=0)||(strlen(%seqFile)==0)||(%action_id<=0))
+      return;
+   
+   %query = "SELECT id FROM actionProfileSequence WHERE " @
+            "profile_id=" @ %profile_id @ " AND action_id=" @ 
+            %action_id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   if (%resultSet)
+   {
+      %actionSeq_id = sqlite.getColumn(%resultSet,"id");
+      %query = "UPDATE actionProfileSequence SET sequence_file='" @ 
+               %seqFile @ "' WHERE id=" @ %actionSeq_id @ ";";
+      sqlite.query(%query,0);
+   }
+   else
+   {
+      %query = "INSERT INTO actionProfileSequence (profile_id,action_id,sequence_file) " @
+               "VALUES (" @ %profile_id @ "," @ %action_id @ ",'" @ %seqFile @ "');";
+      sqlite.query(%query,0);      
+   }
+   
+}
+
+function unassignMMSequenceAction()
+{
+   echo("unassignMMSequenceAction is currently unavailable.");
+}
+
+
+function addMMKeyframe()
+{
+   
+}
+
+function deleteMMKeyframe()
+{
+   
+}
+
+function addMMKeyframeSeries()
+{
+   
+}
+
+function deleteMMKeyframeSeries()
+{
+   
+}
+
+function deleteMMKeyframesByNode()
+{
+   
+}
+
+function mmAdjustNode()
+{
+   
+}
+
+function mmUnadjustNode()
+{
+   
+}
+
+function mmSetNode()
+{
+   
+}
+
+function mmStartCentered()
+{
+   
+}
+
+function mmFaceForward()
+{
+   
+}
+
+function mmMoveForward()
+{
+   
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+//  Sequence Timeline Window     /////////////////////////////////////////////////
+
+function setupMegaMotionSequenceWindow()
+{   
+   if (!isDefined("MegaMotionSequenceWindow"))
+      return;   
+      
+   $mmSequenceSlider = MegaMotionSequenceWindow.findObjectByInternalName("sequenceSlider");
+   $mmSequenceSlider.ticks = 0;
+   
+   $mmSequenceSliderIn = MegaMotionSequenceWindow.findObjectByInternalName("sequenceInBar");
+   $mmSequenceSliderOut = MegaMotionSequenceWindow.findObjectByInternalName("sequenceOutBar");
+   
+   $mmSequenceInFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceInFrame");
+   $mmSequenceOutFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceOutFrame");
+   
+   $mmSequenceInFrame.setText("0");
+   $mmSequenceOutFrame.setText("1");
+
+   $mmSequenceFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceFrame");
+   $mmSequenceInFrame.setText("0");
+}
+
+function mmSequenceSetInBar()
+{
+   %outPos = $mmSequenceSliderOut.getPosition();
+   
+   %frame = $mmSequenceSlider.value;
+   %frame = mFloor(%frame);
+   %numFrames = $mmSequenceSlider.range.y;
+   %newPos = $mmSequenceSlider.getPosition();
+   %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);//Slider can't go to end.
+   %newPos.y -= 12;
+   
+   if (%outPos.x < %newPos.x)
+   {
+      $mmSequenceSliderOut.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceOutFrame.setText(%frame);
+      $mmSequenceSliderIn.setPosition(%outPos.x,%outPos.y);
+      %sliderPos = $mmSequenceSlider.getPosition().x;
+      %frame = mCeil(((%outPos.x - %sliderPos)/$mmSequenceSlider.extent.x)*$mmSequenceSlider.range.y);
+      $mmSequenceInFrame.setText(%frame);
+   }
+   else if (%outPos.x == %newPos.x)
+   {      
+      $mmSequenceSliderIn.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceInFrame.setText(%frame);
+      %frame += 1;
+      %newPos = $mmSequenceSlider.getPosition();
+      %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);
+      %newPos.y -= 12;
+      $mmSequenceSliderOut.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceOutFrame.setText(%frame);
+   }
+   else
+   {
+      $mmSequenceSliderIn.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceInFrame.setText(%frame);
+   }      
+}
+
+function mmSequenceBackwardToIn()
+{
+   $mmSelectedShape.pauseSeq();
+   
+   %inPos = $mmSequenceSliderIn.getPosition().x;
+   %sliderPos = $mmSequenceSlider.getPosition().x;
+   
+   //Marker position as percentage of total slider width, -12 because marker can't get to the end.
+   %inSeqPos = ((%inPos - %sliderPos)/($mmSequenceSlider.extent.x - 12));
+   $mmSelectedShape.setSeqPos(%inSeqPos); 
+}
+
+function mmSequenceStepBackward()
+{
+   $mmSelectedShape.pauseSeq();
+   
+   //%seqFrameStep = 1.0/$mmSelectedShape.getSeqFrames($mmSelectedShape.getAmbientSeq());
+   %seqFrameStep = 1.0/$mmSelectedShape.getSeqFrames($mmSequenceList.getSelected());
+   //%seqFrameStep = 1.0/getWord($mmSequenceSlider.getRange(),1);//Hm, NOPE.
+   %pos = $mmSelectedShape.getSeqPos();
+   %newPos = %pos - %seqFrameStep;
+   if (%newPos < 0.0)
+      %newPos = 0.0;
+      
+   $mmSelectedShape.setSeqPos(%newPos);  
+}
+
+function mmSequencePlayBackward()
+{
+   %pos = $mmSelectedShape.getSeqPos();
+   if (%pos==0) %pos = 1.0;
+   //$mmSelectedShape.playSeqByNum($mmSelectedShape.getAmbientSeq());
+   $mmSelectedShape.playSeqByNum($mmSequenceList.getSelected());
+   $mmSelectedShape.reverseSeq();
+   $mmSelectedShape.setSeqPos(%pos);   
+}
+
+function mmSequencePause()
+{ 
+   $mmSelectedShape.pauseSeq();
+}
+
+function mmSequencePlayForward()
+{
+   %pos = $mmSelectedShape.getSeqPos();
+   //$mmSelectedShape.playSeqByNum($mmSelectedShape.getAmbientSeq());
+   $mmSelectedShape.playSeqByNum($mmSequenceList.getSelected());
+   $mmSelectedShape.forwardSeq();
+   $mmSelectedShape.setSeqPos(%pos);
+}
+
+function mmSequenceStepForward()
+{
+   $mmSelectedShape.pauseSeq();
+   
+   //%seqFrameStep = 1.0/$mmSelectedShape.getSeqFrames($mmSelectedShape.getAmbientSeq());
+   %seqFrameStep = 1.0/$mmSelectedShape.getSeqFrames($mmSequenceList.getSelected());
+   %pos = $mmSelectedShape.getSeqPos();
+   %newPos = %pos + %seqFrameStep;
+   if (%newPos > 1.0)
+      %newPos = 1.0;
+      
+   $mmSelectedShape.setSeqPos(%newPos); 
+}
+
+function mmSequenceForwardToOut()
+{
+   $mmSelectedShape.pauseSeq();
+   
+   %outPos = $mmSequenceSliderOut.getPosition().x;
+   %sliderPos = $mmSequenceSlider.getPosition().x;
+   
+   //Marker position as percentage of total slider width.
+   %outSeqPos = ((%outPos - %sliderPos)/($mmSequenceSlider.extent.x - 12));
+   $mmSelectedShape.setSeqPos(%outSeqPos); 
+}
+
+
+function mmSequenceSetOutBar()
+{   
+   %inPos = $mmSequenceSliderIn.getPosition();
+   
+   %frame = $mmSequenceSlider.value;
+   %frame = mCeil(%frame);
+   %numFrames = $mmSequenceSlider.range.y;
+   %newPos = $mmSequenceSlider.getPosition();
+   %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);
+   %newPos.y -= 12;
+   
+   if (%inPos.x > %newPos.x)
+   {
+      $mmSequenceSliderIn.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceInFrame.setText(%frame);
+      $mmSequenceSliderOut.setPosition(%inPos.x,%inPos.y);
+      %sliderPos = $mmSequenceSlider.getPosition().x;
+      %frame = mCeil(((%inPos.x - %sliderPos)/$mmSequenceSlider.extent.x)*$mmSequenceSlider.range.y);
+      $mmSequenceOutFrame.setText(%frame);
+   }
+   else if (%inPos.x == %newPos.x)
+   {      
+      $mmSequenceSliderIn.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceInFrame.setText(%frame);
+      %frame += 1;
+      %newPos = $mmSequenceSlider.getPosition();
+      %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);
+      %newPos.y -= 12;
+      $mmSequenceSliderOut.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceOutFrame.setText(%frame);
+   }
+   else
+   {
+      $mmSequenceSliderOut.setPosition(%newPos.x,%newPos.y);
+      $mmSequenceOutFrame.setText(%frame);
+   }
+   //echo("out bar, frame " @ %frame @ " numFrames " @ %numFrames @ " pos " @
+   //       %newPos.x @ " startpos " @ $mmSequenceSlider.getPosition().x @ " extent " 
+   //       @ $mmSequenceSlider.extent.x);
+
+}
+
+function mmSequenceSliderClick()
+{
+   $mmSelectedShape.pauseSeq();
+   
+   %value = $mmSequenceSlider.value; 
+   %newPos = %value / $mmSequenceSlider.range.y;   
+   $mmSelectedShape.setSeqPos(%newPos); 
+   
+}
+
+function mmSequenceSliderDrag()
+{
+   $mmSelectedShape.pauseSeq();
+      
+   %value = $mmSequenceSlider.value; 
+   %newPos = %value / $mmSequenceSlider.range.y;   
+   echo("slider drag! value " @ %value @ " newpos " @ %newPos);
+   $mmSelectedShape.setSeqPos(%newPos); 
+}
+
+
+
+
+function mmCrop()
+{
+   
+}
+
+function mmFindLoop()
+{
+   
+}
+
+function mmSmoothLoop()
+{
+   
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+function MegaMotionTick()
+{  
+   //General function for anything in MegaMotion that needs a tick but doesn't do it itself.
+   
+   //Sequence slider needs to keep up with selected shape's animation:
+   if (($mmSelectedShape)&&($mmSequenceSlider)&&(MegaMotionSequenceWindow.isVisible()))
+   {
+      %threadPos = $mmSelectedShape.getSeqPos();
+      %range = $mmSequenceSlider.range;
+      %numFrames = %range.y;//range is a Point2F, so begin and end are x and y.
+      %frame = %threadPos * %numFrames;
+      %frame = mRound(%frame * 100)/100;//(I don't think we have a "round to n decimals" in torque script yet?)
+      $mmSequenceSlider.setValue(%frame);      
+      $mmSequenceFrame.setText(%frame);
+   }
+   
+   schedule(30,0,"MegaMotionTick");//30 MS =~ 32 times per second.
+}
+
+function startRecording()
+{
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      %shape.setIsRecording(true);
+   }   
+}
+
+function stopRecording()
+{
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      %shape.setIsRecording(false);
+   }   
+}
+
+function makeSequences()
+{
+   //OKAY... here we go. We now need to:
+   // a) find our model's home directory   
+   // b) in that directory, create a new directory with a naming protocol
+   //       "scene_[%scene_id].[timestamp]"?
+   // c) fill it with sequences
+   
+   //For now, just "workSeqs", if name changes we'll have to update M4.cs every time.
+   %dirPath = %shape.getPath() @ "/scenes";
+   createDirectory(%dirPath);//make shape/scenes folder first, if necessary.
+   %dirPath = %shape.getPath() @ "/scenes/" @ %shape.sceneID ;//then make specific scene folder.
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      %dirPath = %shape.getPath() @ "/scenes/" @ %shape.sceneID ;
+      %shape.makeSequence(%dirPath @ "/" @ %shape.getSceneShapeID());
    }
 }
-   */
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -1925,6 +2367,18 @@ function setupMegaMotionForm()
 
 
 
+//function testSpatialite()
+//{
+//   //%query = "CREATE TABLE spatialTest ( id INTEGER, name TEXT NOT NULL, geom BLOB NOT NULL);";
+//   %query = "INSERT INTO spatialTest ( id , name, geom ) VALUES (1,'Test01',GeomFromText('POINT(1 2)'));";
+   
+//   %result = sqlite.query(%query, 0);
+	
+//   if (%result)
+//      echo("spatialite inserted into a table with a geom!");
+//   else
+//      echo("spatialite failed to insert into a table with a geom!  "  );
+//}
 
 //OBSOLETE, TESTING /////////////////////////////
 

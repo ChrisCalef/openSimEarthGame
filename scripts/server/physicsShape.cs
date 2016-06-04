@@ -20,13 +20,16 @@ function PhysicsShape::onStartup(%this)
       %this.setActionSeq("ambient","ambient");//This might not always be idle, could be just breathing
       %this.setActionSeq("idle","ambient");// and idle could be that plus fidgeting, etc.
       %this.setActionSeq("walk","walk");
-      if (getRandom()>0.4)
+      
+      //The reason for ActionSequences is so you don't have to use the same walk or run anim for every actor, 
+         //but you can treat them as if they were all the same in practice.
+      //if (getRandom()>0.4)
          %this.setActionSeq("run","run");
-      else 
-         %this.setActionSeq("run","runscerd");
+      //else 
+      //   %this.setActionSeq("run","runscerd");
          
-      %this.setActionSeq("runscerd","runscerd");
-      %this.setActionSeq("fall","runscerd");
+      //%this.setActionSeq("runscerd","runscerd");
+      %this.setActionSeq("fall","runscerd");//Also doesn't matter if you use the same anim for multiple actionSeqs.
       %this.setActionSeq("getup","rSideGetup");   
       %this.setActionSeq("attack","power_punch_down");
       %this.setActionSeq("block","punch_uppercut");//TEMP, don't have any blocking anims atm

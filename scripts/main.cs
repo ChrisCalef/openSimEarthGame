@@ -111,7 +111,7 @@ function onStart()
    
    initOpenSteer();
    
-   schedule(90,0,"openSimEarthTick");
+   //schedule(90,0,"openSimEarthTick");
    //////////////// OpenSimEarth ///////////////
    
    

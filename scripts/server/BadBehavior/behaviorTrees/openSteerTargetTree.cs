@@ -25,13 +25,6 @@ new Root(openSteerTargetTree) {
             canSave = "1";
             canSaveDynamicFields = "1";     
             
-             
-            new ScriptEval() {
-               behaviorScript = "echo(\"openSteer go to target...\");";
-               defaultReturnStatus = "SUCCESS";
-               canSave = "1";
-               canSaveDynamicFields = "1";
-            };
             new ScriptedBehavior() {
                preconditionMode = "TICK";
                internalName = "openSteer go to target";

@@ -80,6 +80,7 @@ function initServer()
    exec("./physicsShape.cs");
    exec("./terrainPager.cs");
    
+   schedule(90,0,"MegaMotionTick");
 }
 
 

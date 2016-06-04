@@ -664,9 +664,10 @@ moveMap.bindCmd(keyboard, "n", "toggleNetGraph();", "");
 //GlobalActionMap.bindCmd(keyboard, "alt b", "$m4.aitp(15,\"2 0 0\");$m4.aitp(18,\"-2 0 0\");","");
 //TEMP, this will be hooked up to a gui of course.
 GlobalActionMap.bindCmd(keyboard, "alt f", "loadMMScene(12);","");
+GlobalActionMap.bindCmd(keyboard, "alt g", "loadMMScene(11);","");
 //GlobalActionMap.bindCmd(keyboard, "alt f", "loadScene(1); schedule(30, 0, \"assignBehaviors\"); schedule(40, 0, \"startRecording\");","");//
 //GlobalActionMap.bindCmd(keyboard, "alt g", "stopRecording();","");
-GlobalActionMap.bindCmd(keyboard, "alt g", "shapesAct();","");
+//GlobalActionMap.bindCmd(keyboard, "alt g", "shapesAct();","");
 //GlobalActionMap.bindCmd(keyboard, "alt g", "makeSqlGuiForm(1);","");
 //GlobalActionMap.bindCmd(keyboard, "alt b", "makeSequences();","");
 GlobalActionMap.bindCmd(keyboard, "alt b", "testAddTrees();","");

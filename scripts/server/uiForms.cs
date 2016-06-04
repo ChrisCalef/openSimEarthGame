@@ -201,6 +201,7 @@ function setupUIFormWindow()
    $groupNumEdit = uiFormWindow.findObjectByInternalName("groupNumEdit");
    $profileEdit = uiFormWindow.findObjectByInternalName("profileEdit");
    $valueEdit = uiFormWindow.findObjectByInternalName("valueEdit");
+   $altCommandEdit = uiFormWindow.findObjectByInternalName("altCommandEdit");
       
       
    $formList.clear();
@@ -414,7 +415,7 @@ function deleteUIElement()
       return;  
    }
    %elem_id = $elementList.getSelected();
-   %query = "SELECT id FROM uiElement WHERE %parent_id=" @ %elem_id @ " OR left_anchor=" @ %elem_id @
+   %query = "SELECT id FROM uiElement WHERE parent_id=" @ %elem_id @ " OR left_anchor=" @ %elem_id @
       " OR right_anchor=" @ %elem_id @ " OR top_anchor=" @ %elem_id @ " OR bottom_anchor=" @ %elem_id @ ";";
    %resultSet = sqlite.query(%query,0);
    if (sqlite.numRows(%resultSet)>0)
@@ -530,6 +531,7 @@ function selectUIElement()
    %column_names[24] = "group_num";
    %column_names[25] = "profile";
    %column_names[26] = "value";
+   %column_names[27] = "alt_command";
    
    %query = "SELECT * FROM uiElement e " @ 
 	         "WHERE id=" @ $elementList.getSelected() @ ";";   
@@ -537,7 +539,7 @@ function selectUIElement()
    %resultSet = sqlite.query(%query, 0); 
    if (%resultSet)
    {
-      for (%c=0;%c<27;%c++)
+      for (%c=0;%c<28;%c++)
       {
          %resultSet[%c] = sqlite.getColumn(%resultSet, %column_names[%c]);
          if (%resultSet[%c] $= "NULL")
@@ -582,6 +584,7 @@ function selectUIElement()
    $groupNumEdit.setText(%resultSet[24]);
    $profileEdit.setText(%resultSet[25]);
    $valueEdit.setText(%resultSet[26]);
+   $altCommandEdit.setText(%resultSet[27]);
    
    //Anything else to do?   
 }
@@ -683,6 +686,8 @@ function updateUIElement()
       %query = %query @ ",profile='" @ $profileEdit.getText() @ "'";
    if (strlen($valueEdit.getText())>0)
       %query = %query @ ",value='" @ $valueEdit.getText() @ "'";
+   if (strlen($altCommandEdit.getText())>0)
+      %query = %query @ ",alt_command='" @ $altCommandEdit.getText() @ "'";
       
    %query = %query @ " WHERE id=" @ $elementList.getSelected() @ ";";
    
@@ -728,11 +733,12 @@ function saveSqlGuiXML(%form_id,%xml_file)
    %column_names[24] = "group_num";
    %column_names[25] = "profile";
    %column_names[26] = "value";
+   %column_names[27] = "command";
    	         
    %query = "SELECT e.id,e.parent_id,e.bitmap_id,e.left_anchor,e.right_anchor,e.top_anchor,e.bottom_anchor,e.type," @
             "e.content,e.name,e.width,e.height,e.command,e.tooltip,e.horiz_align,e.vert_align,e.pos_x,e.pos_y,e.horiz_padding," @
             "e.vert_padding,e.horiz_edge_padding,e.vert_edge_padding,e.variable,e.button_type,e.group_num,e.profile," @
-            "e.value,la.name as la_name,ra.name as ra_name,ta.name as ta_name,ba.name as ba_name,b.path " @
+            "e.value,e.alt_command,la.name as la_name,ra.name as ra_name,ta.name as ta_name,ba.name as ba_name,b.path " @
             "FROM uiElement e " @ 
 	         "LEFT JOIN uiBitmap b ON b.id=e.bitmap_id " @ 
 	         "LEFT JOIN uiElement la ON la.id=e.left_anchor " @ 
@@ -782,11 +788,12 @@ function saveSqlGuiXML(%form_id,%xml_file)
          %results[%count,%c] = sqlite.getColumn(%resultSet, "group_num"); %c++;
          %results[%count,%c] = sqlite.getColumn(%resultSet, "profile"); %c++;
          %results[%count,%c] = sqlite.getColumn(%resultSet, "value"); %c++;
+         %results[%count,%c] = sqlite.getColumn(%resultSet, "alt_command"); %c++;
          
          %results[%count,%c] = false;//OR, instead of overriding type, just add one more column at the end.
          
-         echo("loading result " @ %count @ " " @ %results[%count,2] @ " width " @ %results[%count,3] @ 
-         " height " @ %results[%count,4] @ "  command: " @ %results[%count,12] );
+         //echo("loading result " @ %count @ " " @ %results[%count,2] @ " width " @ %results[%count,3] @ 
+         //" height " @ %results[%count,4] @ "  command: " @ %results[%count,12] );
          
          %count++;
          sqlite.nextRow(%resultSet);
@@ -1002,7 +1009,7 @@ function makeSqlGuiForm(%form_id)
    %query = "SELECT e.id,e.parent_id,e.bitmap_id,e.left_anchor,e.right_anchor,e.top_anchor,e.bottom_anchor,e.type," @
             "e.content,e.name,e.width,e.height,e.command,e.tooltip,e.horiz_align,e.vert_align,e.pos_x,e.pos_y," @
             "e.horiz_padding,e.vert_padding,e.horiz_edge_padding,e.vert_edge_padding,e.variable,e.button_type," @
-            "e.group_num,e.profile,e.value,b.path " @
+            "e.group_num,e.profile,e.value,e.alt_command,b.path " @
             "FROM uiElement e " @ 
 	         "LEFT JOIN uiBitmap b ON b.id=e.bitmap_id " @ 
 	         "WHERE e.form_id=" @ %form_id @ ";"; 	         
@@ -1052,6 +1059,7 @@ function makeSqlGuiForm(%form_id)
          %results[%count,%c] = sqlite.getColumn(%resultSet, "group_num"); %c++;
          %results[%count,%c] = sqlite.getColumn(%resultSet, "profile"); %c++;
          %results[%count,%c] = sqlite.getColumn(%resultSet, "value"); %c++;
+         %results[%count,%c] = sqlite.getColumn(%resultSet, "alt_command"); %c++;
          
          %results[%count,%c] = false;//OR, instead of overriding type, just add one more column at the end.
          
@@ -1496,6 +1504,7 @@ function makeSqlGuiForm(%form_id)
          %group_num = %results[%childCounter,24];
          %profile = %results[%childCounter,25];
          %value = %results[%childCounter,26];
+         %alt_command = %results[%childCounter,27];
              
          //echo("adding element, name " @ %name @ " type " @ %type @ " id " @ %id );
          //And, UNFORTUNATELY, we (currently) need to repeat the whole block of anchor logic again here. 
@@ -1732,6 +1741,7 @@ function makeSqlGuiForm(%form_id)
             if (strlen(%button_type)>0) %script = %script @ %indent @ "   buttonType = \"" @ %button_type @ "\";\n"; 
             if (strlen(%group_num)>0) %script = %script @ %indent @ "   groupNum = \"" @ %group_num @ "\";\n"; 
             if (strlen(%profile)>0) %script = %script @ %indent @ "   profile = \"" @ %profile @ "\";\n"; 
+            if (strlen(%alt_command)>0) %script = %script @ %indent @ "   altCommand = \"" @ %alt_command @ "\";\n";
             //if (%test) 
             //   %onclick_script = %onclick_script @ 
             //      "function " @ %name @ "::onClick(%this)\n{\n " @ "   $elementList.setSelected(" @ 
@@ -1758,6 +1768,7 @@ function makeSqlGuiForm(%form_id)
          %group_num = "";
          %value = "";
          %profile = "";
+         %alt_command = "";
          
       }//end of for (0..%currentChildCount) loop.
       
@@ -1933,7 +1944,8 @@ function makeXmlGuiForm(%filename)
    %column_names[24] = "group_num";
    %column_names[25] = "profile";
    %column_names[26] = "value";
-   %c = 27;
+   %column_names[27] = "alt_command";
+
    %xml = new SimXMLDocument() {};
    %xml.loadFile( %filename );
    
@@ -1943,7 +1955,7 @@ function makeXmlGuiForm(%filename)
    
    %count = 0;
    
-   for (%k=0;%k<27;%k++) // first clear the array.
+   for (%k=0;%k<28;%k++) // first clear the array.
       %results[%count,%k] = "";
       
    %results[%count,0] = %xml.attribute(%column_names[0]);//ID
@@ -1951,7 +1963,7 @@ function makeXmlGuiForm(%filename)
    
    for (%c=2;%c<5;%c++)
       %results[%count,%c] = %xml.attribute(%column_names[%c]);     
-   for (%c=5;%c<27;%c++)
+   for (%c=5;%c<28;%c++)
    {
       if (%xml.pushFirstChildElement(%column_names[%c]))
       {
@@ -1961,7 +1973,7 @@ function makeXmlGuiForm(%filename)
    }
    
    %results[%count,1] = 0;//No parent, for we are the top.
-   %results[%count,27] = false;//And always mark "finished" flag false.
+   %results[%count,28] = false;//And always mark "finished" flag false.
    %form_id = %results[%count,0];
    
    %container_type = %results[%count,5];//Save this for later. (?)
@@ -1976,12 +1988,12 @@ function makeXmlGuiForm(%filename)
    %elem = %xml.pushFirstChildElement("element");
    while (%elem)
    {      
-      for (%k=0;%k<27;%k++) %results[%count,%k] = "";      
+      for (%k=0;%k<28;%k++) %results[%count,%k] = "";      
       %results[%count,0] = %xml.attribute(%column_names[0]);   
       if (strlen(%results[%count,0])==0) %results[%count,0] = %count+1;
       for (%c=2;%c<5;%c++)
          %results[%count,%c] = %xml.attribute(%column_names[%c]);     
-      for (%c=5;%c<27;%c++)
+      for (%c=5;%c<28;%c++)
       {
          if (%xml.pushFirstChildElement(%column_names[%c]))
          {
@@ -1990,7 +2002,7 @@ function makeXmlGuiForm(%filename)
          }
       }
       %results[%count,1] = %form_id;
-      %results[%count,27] = false;
+      %results[%count,28] = false;
       %count++; 
       ///////////////////////////////////////////////
       %elem2 =  %xml.pushFirstChildElement("element");
@@ -1999,12 +2011,12 @@ function makeXmlGuiForm(%filename)
          %parent2 = %results[%count-1,0];
          while (%elem2)
          {            
-            for (%k=0;%k<27;%k++) %results[%count,%k] = "";         
+            for (%k=0;%k<28;%k++) %results[%count,%k] = "";         
             %results[%count,0] = %xml.attribute(%column_names[0]);   
             if (strlen(%results[%count,0])==0) %results[%count,0] = %count+1;
             for (%c=2;%c<5;%c++)
                %results[%count,%c] = %xml.attribute(%column_names[%c]);     
-            for (%c=5;%c<27;%c++)
+            for (%c=5;%c<28;%c++)
             {
                if (%xml.pushFirstChildElement(%column_names[%c]))
                {
@@ -2013,7 +2025,7 @@ function makeXmlGuiForm(%filename)
                }
             }
             %results[%count,1] = %parent2;
-            %results[%count,27] = false;
+            %results[%count,28] = false;
             %count++; 
             ///////////////////////////////////////////////            
             %elem3 =  %xml.pushFirstChildElement("element");
@@ -2022,12 +2034,12 @@ function makeXmlGuiForm(%filename)
                %parent3 = %results[%count-1,0];
                while (%elem3)
                {               
-                  for (%k=0;%k<27;%k++) %results[%count,%k] = "";         
+                  for (%k=0;%k<28;%k++) %results[%count,%k] = "";         
                   %results[%count,0] = %xml.attribute(%column_names[0]);  
                   if (strlen(%results[%count,0])==0) %results[%count,0] = %count+1;    
                   for (%c=2;%c<5;%c++)
                      %results[%count,%c] = %xml.attribute(%column_names[%c]);     
-                  for (%c=5;%c<27;%c++)
+                  for (%c=5;%c<28;%c++)
                   {
                      if (%xml.pushFirstChildElement(%column_names[%c]))
                      {
@@ -2036,7 +2048,7 @@ function makeXmlGuiForm(%filename)
                      }
                   }
                   %results[%count,1] = %parent3;                  
-                  %results[%count,27] = false;
+                  %results[%count,28] = false;
                   %count++; 
                   ///////////////////////////////////////////////             
                   %elem4 =  %xml.pushFirstChildElement("element");
@@ -2045,12 +2057,12 @@ function makeXmlGuiForm(%filename)
                      %parent4 = %results[%count-1,0];
                      while (%elem4)
                      {                  
-                        for (%k=0;%k<27;%k++) %results[%count,%k] = "";
+                        for (%k=0;%k<28;%k++) %results[%count,%k] = "";
                         %results[%count,0] = %xml.attribute(%column_names[0]);      
                         if (strlen(%results[%count,0])==0) %results[%count,0] = %count+1;         
                         for (%c=2;%c<5;%c++)
                            %results[%count,%c] = %xml.attribute(%column_names[%c]);     
-                        for (%c=5;%c<27;%c++)
+                        for (%c=5;%c<28;%c++)
                         {
                            if (%xml.pushFirstChildElement(%column_names[%c]))
                            {
@@ -2059,7 +2071,7 @@ function makeXmlGuiForm(%filename)
                            }
                         }
                         %results[%count,1] = %parent4;  
-                        %results[%count,27] = false;
+                        %results[%count,28] = false;
                         %count++; 
 
                         ///And... that's as many layers as we get for XML, if you want more use SQL version.
@@ -2533,6 +2545,7 @@ function makeXmlGuiForm(%filename)
          %group_num = %results[%childCounter,24];
          %profile = %results[%childCounter,25];
          %value = %results[%childCounter,26];
+         %alt_command = %results[%childCounter,27];
              
          //echo("reading element, name " @ %name @ " type " @ %type @ " id " @ %id );
          //And, UNFORTUNATELY, we (currently) need to repeat the whole block of anchor logic again here. 
@@ -2771,6 +2784,7 @@ function makeXmlGuiForm(%filename)
             if (strlen(%button_type)>0) %script = %script @ %indent @ "   buttonType = \"" @ %button_type @ "\";\n"; 
             if (strlen(%group_num)>0) %script = %script @ %indent @ "   groupNum = \"" @ %group_num @ "\";\n"; 
             if (strlen(%profile)>0) %script = %script @ %indent @ "   profile = \"" @ %profile @ "\";\n"; 
+            if (strlen(%alt_command)>0) %script = %script @ %indent @ "   altCommand = \"" @ %alt_command @ "\";\n"; 
             %script = %script @ %indent @ "};\n";
             %results[%childCounter,%c] = true; 
          }
@@ -2793,6 +2807,7 @@ function makeXmlGuiForm(%filename)
          %group_num = "";
          %value = "";
          %profile = "";
+         %alt_command = "";
          
       }//end of for (0..%currentChildCount) loop.
       

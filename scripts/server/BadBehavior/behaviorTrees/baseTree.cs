@@ -14,12 +14,6 @@ new Root(baseTree) {
          canSave = "1";
          canSaveDynamicFields = "1";
       };
-      new ScriptEval() {
-         behaviorScript = "echo(\"WAT IS GOING ON???????????????\");";
-         defaultReturnStatus = "SUCCESS";
-         canSave = "1";
-         canSaveDynamicFields = "1";
-      };
       new Loop() {
          numLoops = "0";
          terminationPolicy = "ON_FAILURE"; 
