@@ -1,5 +1,4 @@
 
-
 $MegaMotionScenesWindowID = 159;
 $MegaMotionSequenceWindowID = 395;
 
@@ -418,7 +417,7 @@ function updateMegaMotionForm()
       if (%partId<=0)
          return;
       
-      updateMMShapePartTab();      
+      mmUpdateShapePartTab();      
       
    }
    else if (%selectedTab == %bvhTab)
@@ -431,8 +430,8 @@ function updateMegaMotionForm()
    
    if ($mmLoadedScenes>0)
    {//FIX: need to track which scenes are currently loaded, and reload all of them and only them.)
-      unloadMMScene($mmSceneList.getSelected());
-      loadMMScene($mmSceneList.getSelected());
+      mmUnloadScene($mmSceneList.getSelected());
+      mmLoadScene($mmSceneList.getSelected());
    }
 }
 
@@ -809,7 +808,7 @@ function MegaMotionSaveSceneShapes()
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 
-function selectMMProject()
+function mmSelectProject()
 {   
    echo("calling selectMegaMotionProject " @ $mmProjectList.getSelected());
    
@@ -844,16 +843,16 @@ function selectMMProject()
    }      
 }
 
-function addMMProject()
+function mmAddProject()
 {
    makeSqlGuiForm($mmAddProjectWindowID);
 }
 
-function reallyAddMMProject()
+function mmReallyAddProject()
 {
-   if (addMMProjectWindow.isVisible())
+   if (mmAddProjectWindow.isVisible())
    {
-      %name = addMMProjectWindow.findObjectByInternalName("nameEdit").getText(); 
+      %name = mmAddProjectWindow.findObjectByInternalName("nameEdit").getText(); 
       if ((strlen(%name)==0)||(substr(%name," ")>0))
       {
          MessageBoxOK("Name Invalid","Project name must be a unique character string with no spaces or special characters.","");
@@ -869,13 +868,13 @@ function reallyAddMMProject()
       %query = "INSERT INTO project (name) VALUES ('" @ %name @ "');";
       sqlite.query(%query,0);
       
-      addMMProjectWindow.delete();
+      mmAddProjectWindow.delete();
       
       exposeMegaMotionScenesForm();
    }
 }
 
-function deleteMMProject()
+function mmDeleteProject()
 {
    %project_id = $mmProjectList.getSelected();
    if (%project_id<=0)
@@ -883,12 +882,12 @@ function deleteMMProject()
       
    MessageBoxOKCancel( "Warning", 
       "This will permanently delete this project and all of its scenes! Are you completely sure?", 
-      "reallyDeleteMMProject();",
+      "mmReallyDeleteProject();",
       "" ); 
       
 }
    
-function reallyDeleteMMProject()
+function mmReallyDeleteProject()
 {
    %project_id = $mmProjectList.getSelected();
       
@@ -898,7 +897,7 @@ function reallyDeleteMMProject()
    {
       while (!sqlite.endOfResult(%resultSet))
       {
-         reallyDeleteMMScene(sqlite.getColumn(%resultSet,"id") );
+         mmReallyDeleteScene(sqlite.getColumn(%resultSet,"id") );
          sqlite.nextRow(%resultSet);  
       }
       sqlite.clearResult(%resultSet);      
@@ -914,19 +913,19 @@ function reallyDeleteMMProject()
 }
 
 
-function loadMMProject()
+function mmLoadProject()
 {
    //Maybe we will want to load shared static object props used by multiple scenes? 
     
 }
 
-function unloadMMProject()
+function mmUnloadProject()
 {
    //Remove project environment objects?
    
 }
 
-function selectMMScene()
+function mmSelectScene()
 {
    echo("calling selectMegaMotionScene");
    
@@ -963,16 +962,16 @@ function selectMMScene()
    }   
 }
 
-function addMMScene()
+function mmAddScene()
 {
    makeSqlGuiForm($mmAddSceneWindowID);   
 }
 
-function reallyAddMMScene()  //TO DO: Description, position.
+function mmReallyAddScene()  //TO DO: Description, position.
 {  
-   if (addMMSceneWindow.isVisible())
+   if (mmAddSceneWindow.isVisible())
    {
-      %name = addMMSceneWindow.findObjectByInternalName("nameEdit").getText(); 
+      %name = mmAddSceneWindow.findObjectByInternalName("nameEdit").getText(); 
       if ((strlen(%name)==0)||(substr(%name," ")>0))
       {
          MessageBoxOK("Name Invalid","Scene name must be a unique character string with no spaces or special characters.","");
@@ -996,13 +995,13 @@ function reallyAddMMScene()  //TO DO: Description, position.
                   ",last_insert_rowid());";
       sqlite.query(%query,0);
             
-      addMMSceneWindow.delete();
+      mmAddSceneWindow.delete();
       
       exposeMegaMotionScenesForm();
    }
 }
 
-function deleteMMScene()
+function mmDeleteScene()
 {
    %scene_id = $mmSceneList.getSelected();
    if (%scene_id<=0)
@@ -1010,13 +1009,13 @@ function deleteMMScene()
       
    MessageBoxOKCancel( "Warning", 
       "This will permanently delete this scene and all of its sceneShapes! Are you completely sure?", 
-      "reallyDeleteMMScene(" @ %scene_id @ ");",
+      "mmReallyDeleteScene(" @ %scene_id @ ");",
       "" );    
 }
 
-function reallyDeleteMMScene(%id)
+function mmReallyDeleteScene(%id)
 {
-   unloadMMScene(%id);
+   mmUnloadScene(%id);
    
    %query = "SELECT id FROM sceneShape WHERE scene_id=" @ %id @ ";";
    %resultSet = sqlite.query(%query,0);
@@ -1025,7 +1024,7 @@ function reallyDeleteMMScene(%id)
       while (!sqlite.endOfResult(%resultSet))
       {
          %shape_id = sqlite.getColumn(%resultSet,"id");
-         reallyDeleteMMSceneShape(%shape_id);
+         mmReallyDeleteSceneShape(%shape_id);
          sqlite.nextRow(%resultSet); 
       }
       sqlite.clearResult(%resultSet);
@@ -1037,7 +1036,7 @@ function reallyDeleteMMScene(%id)
    exposeMegaMotionScenesForm();
 }
 
-function loadMMScene(%id)
+function mmLoadScene(%id)
 {      
    if (%id<=0)
       return;
@@ -1173,7 +1172,35 @@ function loadMMScene(%id)
    schedule(40, 0, "loadMMKeyframeSets");
 } 
 
-function loadMMKeyframeSets()
+function mmUnloadScene(%id)
+{
+   if (%id<=0)
+      return;
+      
+   //HERE: look up all the sceneShapes from the scene in question, and drop them all from the current mission.
+   %shapesCount = SceneShapes.getCount();
+   for (%i=0;%i<%shapesCount;%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      //echo("shapesCount " @ %shapesCount @ ", sceneShape id " @ %shape.sceneShapeID @ 
+      //         " scene " @ %shape.sceneID ); 
+      if (%shape.sceneID==%id)
+      {       
+         MissionGroup.remove(%shape);
+         SceneShapes.remove(%shape);//Wuh oh... removing from SceneShapes shortens the array...
+         %shape.delete();//Maybe??
+         
+         %shapesCount = SceneShapes.getCount();
+         if (%shapesCount>0)
+            %i=-1;//So start over every time we remove one, until we loop through and remove none.
+         else 
+            %i=1;//Or else we run out of shapes, and just need to exit the loop.   
+            
+         $mmLoadedScenes--;
+      }
+   }   
+}
+function mmLoadKeyframeSets()
 {   
    %scene_id = $mmSceneList.getSelected();
    if ((%scene_id<=0)||(SceneShapes.getCount()==0))
@@ -1252,36 +1279,6 @@ function loadMMKeyframeSets()
          %shape.applyKeyframeSet();
          
          sqlite.nextRow(%resultSet);          
-      }
-   }   
-}
-
-
-function unloadMMScene(%id)
-{
-   if (%id<=0)
-      return;
-      
-   //HERE: look up all the sceneShapes from the scene in question, and drop them all from the current mission.
-   %shapesCount = SceneShapes.getCount();
-   for (%i=0;%i<%shapesCount;%i++)
-   {
-      %shape = SceneShapes.getObject(%i);  
-      //echo("shapesCount " @ %shapesCount @ ", sceneShape id " @ %shape.sceneShapeID @ 
-      //         " scene " @ %shape.sceneID ); 
-      if (%shape.sceneID==%id)
-      {       
-         MissionGroup.remove(%shape);
-         SceneShapes.remove(%shape);//Wuh oh... removing from SceneShapes shortens the array...
-         %shape.delete();//Maybe??
-         
-         %shapesCount = SceneShapes.getCount();
-         if (%shapesCount>0)
-            %i=-1;//So start over every time we remove one, until we loop through and remove none.
-         else 
-            %i=1;//Or else we run out of shapes, and just need to exit the loop.   
-            
-         $mmLoadedScenes--;
       }
    }   
 }
@@ -1370,30 +1367,30 @@ function mmSelectSceneShape()
    }
 }
 
-function addMMSceneShape()
+function mmAddSceneShape()
 {
    makeSqlGuiForm($mmAddSceneShapeWindowID);   
-   setupAddMMSceneShapeForm();
+   setupMMAddSceneShapeForm();
 }
 
-function deleteMMSceneShape()
+function mmDeleteSceneShape()
 {   
    if ($mmSceneShapeList.getSelected()<=0)
       return;
 
    //Don't bother with warning message for every scene shape.
-   reallyDeleteMMSceneShape($mmSceneShapeList.getSelected());
+   mmReallyDeleteSceneShape($mmSceneShapeList.getSelected());
    
    exposeMegaMotionScenesForm();   
    
    if ($mmLoadedScenes>0)
    {
-      unloadMMScene($mmSceneList.getSelected());
-      loadMMScene($mmSceneList.getSelected());
+      mmUnloadScene($mmSceneList.getSelected());
+      mmLoadScene($mmSceneList.getSelected());
    }
 }
 
-function reallyDeleteMMSceneShape(%id)
+function mmReallyDeleteSceneShape(%id)
 {//Now, this can get called from the delete button, OR from inside a loop in another function.
    
    %query = "SELECT pos_id,rot_id,scale_id FROM sceneShape WHERE id=" @ %id @ ";";
@@ -1416,33 +1413,33 @@ function reallyDeleteMMSceneShape(%id)
 }
 
 
-function selectMMShapeGroup()
+function mmSelectShapeGroup()
 {
    //select all instantiated members of this group
 }
 
-function addMMShape()
+function mmAddShape()
 {
    //HERE: file browser window
 }
 
-function reallyAddMMShape()
+function mmReallyAddShape()
 {
    
 }
 
-function deleteMMShape()
+function mmDeleteShape()
 {   //First, delete all the shapeParts, then the shape.
    if ($mmShapeList.getSelected()<=0)
       return;
       
    MessageBoxOKCancel( "Warning", 
       "This will permanently delete this shape and all shapeParts referencing it. Are you completely sure?", 
-      "reallyDeleteMMShape();",
+      "mmReallyDeleteShape();",
       "" );     
 }
 
-function reallyDeleteMMShape()
+function mmReallyDeleteShape()
 {
    if ($mmShapeList.getSelected()<=0)
       return;
@@ -1463,7 +1460,7 @@ function reallyDeleteMMShape()
 }
 ///////////////////////////////////////////////////////////////////////////////
 
-function selectMMShape()
+function mmSelectShape()
 {
    echo("calling selectMegaMotionShape");
    
@@ -1513,13 +1510,13 @@ function selectMMShape()
    if ((%sceneShapeId>0)&&(%shape_id!=$mmShapeId))
    {
       MessageBoxYesNo("","Really assign sceneShape " @ %sceneShapeId @ " to shape " @ 
-         $mmShapeList.getText() @ "?","reassignShape();","");
+         $mmShapeList.getText() @ "?","mmReassignShape();","");
    }
 }
 
 //Not currently hooked in, can't associate it with selectShape() above until we remove all the times
 //we select the shapelist automatically, or really any time we select the shape we're already using.
-function reassignShape()
+function mmReassignShape()
 {
    echo("REASSIGNING SHAPE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
    if (($mmSceneShapeList.getSelected()<=0)||($mmShapeList.getSelected()<=0))
@@ -1533,14 +1530,14 @@ function reassignShape()
    
    if ($mmLoadedScenes>0)
    {
-      unloadMMScene($mmSceneList.getSelected());
-      loadMMScene($mmSceneList.getSelected());
+      mmUnloadScene($mmSceneList.getSelected());
+      mmLoadScene($mmSceneList.getSelected());
    }
    
    $mmSceneShapeList.setSelected(%sceneShapeId);
 }
 
-function selectMMShapePart()
+function mmSelectShapePart()
 {
    if ($mmShapePartList.getSelected()<=0)
       return;
@@ -1596,7 +1593,7 @@ function selectMMShapePart()
 	} 
 }
 
-function updateMMShapePart()
+function mmUpdateShapePart()
 {
    if ($mmShapePartList.getSelected()<=0)
       return;
@@ -1633,7 +1630,7 @@ function updateMMShapePart()
 }
 
 
-function selectMMJoint()
+function mmSelectJoint()
 {
    %jointId = $mmJointList.getSelected();
    if (%jointId<=0)
@@ -1699,12 +1696,12 @@ function selectMMJoint()
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-function setupAddMMSceneShapeForm()
+function setupMMAddSceneShapeForm()
 {
    
-   %shapeList = addMMSceneShapeWindow.findObjectByInternalName("shapeList"); 
-   %groupList = addMMSceneShapeWindow.findObjectByInternalName("groupList"); 
-   %behaviorTree = addMMSceneShapeWindow.findObjectByInternalName("behaviorTree"); 
+   %shapeList = mmAddSceneShapeWindow.findObjectByInternalName("shapeList"); 
+   %groupList = mmAddSceneShapeWindow.findObjectByInternalName("groupList"); 
+   %behaviorTree = mmAddSceneShapeWindow.findObjectByInternalName("behaviorTree"); 
    if ((!isDefined(%shapeList))||(!isDefined(%groupList)))
       return;
    
@@ -1759,18 +1756,18 @@ function setupAddMMSceneShapeForm()
    if (strlen($mmSceneShapeBehaviorTree.getText())>0)
       %behaviorTree.setText($mmSceneShapeBehaviorTree.getText());
       
-   %posX = addMMSceneShapeWindow.findObjectByInternalName("shapePositionX"); 
-   %posY = addMMSceneShapeWindow.findObjectByInternalName("shapePositionY"); 
-   %posZ = addMMSceneShapeWindow.findObjectByInternalName("shapePositionZ"); 
+   %posX = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionX"); 
+   %posY = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionY"); 
+   %posZ = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionZ"); 
    
-   %oriX = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationX"); 
-   %oriY = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationY"); 
-   %oriZ = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationZ"); 
-   %oriAngle = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationAngle"); 
+   %oriX = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationX"); 
+   %oriY = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationY"); 
+   %oriZ = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationZ"); 
+   %oriAngle = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationAngle"); 
    
-   %scaleX = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleX"); 
-   %scaleY = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleY"); 
-   %scaleZ = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleZ"); 
+   %scaleX = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleX"); 
+   %scaleY = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleY"); 
+   %scaleZ = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleZ"); 
    
    %posX.setText(0);
    %posY.setText(0);
@@ -1785,16 +1782,16 @@ function setupAddMMSceneShapeForm()
    %scaleY.setText(1);
    %scaleZ.setText(1);
      
-   %blockX = addMMSceneShapeWindow.findObjectByInternalName("blockCountX"); 
-   %blockY = addMMSceneShapeWindow.findObjectByInternalName("blockCountY"); 
-   %blockPaddingX = addMMSceneShapeWindow.findObjectByInternalName("blockPaddingX"); 
-   %blockPaddingY = addMMSceneShapeWindow.findObjectByInternalName("blockPaddingY"); 
-   %blockVariationX = addMMSceneShapeWindow.findObjectByInternalName("blockVariationX"); 
-   %blockVariationY = addMMSceneShapeWindow.findObjectByInternalName("blockVariationY"); 
-   %blockRotX = addMMSceneShapeWindow.findObjectByInternalName("blockRotationX"); 
-   %blockRotY = addMMSceneShapeWindow.findObjectByInternalName("blockRotationY"); 
-   %blockRotZ = addMMSceneShapeWindow.findObjectByInternalName("blockRotationZ"); 
-   %blockRotAngle = addMMSceneShapeWindow.findObjectByInternalName("blockRotationAngle"); 
+   %blockX = mmAddSceneShapeWindow.findObjectByInternalName("blockCountX"); 
+   %blockY = mmAddSceneShapeWindow.findObjectByInternalName("blockCountY"); 
+   %blockPaddingX = mmAddSceneShapeWindow.findObjectByInternalName("blockPaddingX"); 
+   %blockPaddingY = mmAddSceneShapeWindow.findObjectByInternalName("blockPaddingY"); 
+   %blockVariationX = mmAddSceneShapeWindow.findObjectByInternalName("blockVariationX"); 
+   %blockVariationY = mmAddSceneShapeWindow.findObjectByInternalName("blockVariationY"); 
+   %blockRotX = mmAddSceneShapeWindow.findObjectByInternalName("blockRotationX"); 
+   %blockRotY = mmAddSceneShapeWindow.findObjectByInternalName("blockRotationY"); 
+   %blockRotZ = mmAddSceneShapeWindow.findObjectByInternalName("blockRotationZ"); 
+   %blockRotAngle = mmAddSceneShapeWindow.findObjectByInternalName("blockRotationAngle"); 
    
    %blockX.setText(2);
    %blockY.setText(2);
@@ -1809,31 +1806,31 @@ function setupAddMMSceneShapeForm()
    
 }
 
-function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTree.
+function mmReallyAddSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTree.
 {
-   %name = addMMSceneShapeWindow.findObjectByInternalName("nameEdit").getText(); 
+   %name = mmAddSceneShapeWindow.findObjectByInternalName("nameEdit").getText(); 
    //if (substr(%name," ")>0)
    //{
    //   MessageBoxOK("Name Invalid","Scene name must be a unique character string with no spaces or special characters.","");
    //   return;  
    //}
    %scene_id = $mmSceneList.getSelected();
-   %shape_id = addMMSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
-   %group_id = addMMSceneShapeWindow.findObjectByInternalName("groupList").getSelected();
-   %behavior_tree = addMMSceneShapeWindow.findObjectByInternalName("behaviorTree").getText();
+   %shape_id = mmAddSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
+   %group_id = mmAddSceneShapeWindow.findObjectByInternalName("groupList").getSelected();
+   %behavior_tree = mmAddSceneShapeWindow.findObjectByInternalName("behaviorTree").getText();
    
-   %pos_x = addMMSceneShapeWindow.findObjectByInternalName("shapePositionX").getText();
-   %pos_y = addMMSceneShapeWindow.findObjectByInternalName("shapePositionY").getText();
-   %pos_z = addMMSceneShapeWindow.findObjectByInternalName("shapePositionZ").getText(); 
+   %pos_x = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionX").getText();
+   %pos_y = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionY").getText();
+   %pos_z = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionZ").getText(); 
    
-   %ori_x = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationX").getText();
-   %ori_y = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationY").getText();
-   %ori_z = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationZ").getText(); 
-   %ori_a = addMMSceneShapeWindow.findObjectByInternalName("shapeOrientationAngle").getText();
+   %ori_x = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationX").getText();
+   %ori_y = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationY").getText();
+   %ori_z = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationZ").getText(); 
+   %ori_a = mmAddSceneShapeWindow.findObjectByInternalName("shapeOrientationAngle").getText();
    
-   %scale_x = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleX").getText();
-   %scale_y = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleY").getText();
-   %scale_z = addMMSceneShapeWindow.findObjectByInternalName("shapeScaleZ").getText(); 
+   %scale_x = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleX").getText();
+   %scale_y = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleY").getText();
+   %scale_z = mmAddSceneShapeWindow.findObjectByInternalName("shapeScaleZ").getText(); 
    
    if (strlen(%name)>0)
    {
@@ -1890,14 +1887,14 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
    %query = "UPDATE sceneShape SET scale_id=last_insert_rowid() WHERE id=" @ %ss_id @ ";";
    sqlite.query(%query, 0);  
    
-   addMMSceneShapeWindow.delete();
+   mmAddSceneShapeWindow.delete();
       
    exposeMegaMotionScenesForm();
    
    if ($mmLoadedScenes>0)
    {
-      unloadMMScene($mmSceneList.getSelected());
-      loadMMScene($mmSceneList.getSelected());
+      mmUnloadScene($mmSceneList.getSelected());
+      mmLoadScene($mmSceneList.getSelected());
    }
 }
 
@@ -1906,16 +1903,16 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
 //////////////////////////////////////////////////////////////////////
 
 
-function addMMShapeGroup() 
+function mmAddShapeGroup() 
 {
    makeSqlGuiForm($mmAddShapeGroupWindowID);
 }
 
-function reallyAddMMShapeGroup() 
+function mmReallyAddShapeGroup() 
 {
-   if (addMMShapeGroupWindow.isVisible())
+   if (mmAddShapeGroupWindow.isVisible())
    {
-      %name = addMMShapeGroupWindow.findObjectByInternalName("nameEdit").getText(); 
+      %name = mmAddShapeGroupWindow.findObjectByInternalName("nameEdit").getText(); 
       if (strlen(%name)==0)//TEST FOR UNIQUE
       {
          MessageBoxOK("Name Invalid","Group name must exist!","");
@@ -1931,18 +1928,23 @@ function reallyAddMMShapeGroup()
       %query = "INSERT INTO shapeGroup (name) VALUES ('" @ %name @ "');";
       sqlite.query(%query,0);
       
-      addMMShapeGroupWindow.delete();
+      mmAddShapeGroupWindow.delete();
       
       exposeMegaMotionScenesForm();
    }
 }
 
-function addMMSceneShapeBlock() 
+function mmDeleteShapeGroup()
+{
+   //nothing here yet  
+}
+
+function mmAddSceneShapeBlock() 
 {   
    %scene_id = $mmSceneList.getSelected();
-   %shape_id = addMMSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
+   %shape_id = mmAddSceneShapeWindow.findObjectByInternalName("shapeList").getSelected();
 
-   %groupList = addMMSceneShapeWindow.findObjectByInternalName("groupList");
+   %groupList = mmAddSceneShapeWindow.findObjectByInternalName("groupList");
    %group_id = %groupList.getSelected();
    %group_name = %groupList.getText();
    
@@ -1962,11 +1964,11 @@ function addMMSceneShapeBlock()
    
    if ($mmLoadedScenes>0)
    {
-      unloadMMScene($mmSceneList.getSelected());
-      loadMMScene($mmSceneList.getSelected());
+      mmUnloadScene($mmSceneList.getSelected());
+      mmLoadScene($mmSceneList.getSelected());
    }
   
-   addMMShapeGroupWindow.delete();
+   mmAddShapeGroupWindow.delete();
       
    exposeMegaMotionScenesForm();
 }
@@ -1974,27 +1976,27 @@ function addMMSceneShapeBlock()
 //////////////////////////////////////////////////////////////
 
 
-function addMMOpenSteer()
+function mmAddOpenSteer()
 {
    makeSqlGuiForm($mmAddOpenSteerWindowID);
 }
 
-function reallyAddMMOpenSteer()
+function mmReallyAddOpenSteer()
 {
-   if (addMMOpenSteerWindow.isVisible())
+   if (mmAddOpenSteerWindow.isVisible())
    {
-      %name = addMMOpenSteerWindow.findObjectByInternalName("nameEdit").getText(); 
+      %name = mmAddOpenSteerWindow.findObjectByInternalName("nameEdit").getText(); 
       
       %query = "INSERT INTO openSteerProfile (name) VALUES ('" @ %name @ "');";
       sqlite.query(%query,0);
       
-      addMMOpenSteerWindow.delete();
+      mmAddOpenSteerWindow.delete();
       
       exposeMegaMotionScenesForm();
    }
 }
 
-function deleteMMOpenSteer()
+function mmDeleteOpenSteer()
 {
    %openSteer_id = $mmOpenSteerList.getSelected();
    if (%openSteer_id<=0)
@@ -2002,12 +2004,12 @@ function deleteMMOpenSteer()
       
    MessageBoxOKCancel( "Warning", 
       "This will permanently delete this OpenSteer Profile! Are you completely sure?", 
-      "reallyDeleteMMOpenSteer();",
+      "mmReallyDeleteOpenSteer();",
       "" ); 
       
 }
    
-function reallyDeleteMMOpenSteer()
+function mmReallyDeleteOpenSteer()
 {
    %openSteer_id = $mmOpenSteerList.getSelected();
       
@@ -2018,7 +2020,7 @@ function reallyDeleteMMOpenSteer()
 }
 
 
-function selectMMOpenSteer()
+function mmSelectOpenSteer()
 {   
    %openSteerID = $mmOpenSteerList.getSelected();
    if (%openSteerID<=0)
@@ -2065,7 +2067,7 @@ function selectMMOpenSteer()
 //////////////////////////////////////////////////////////////////////////////////
 //Sequence Tab
 
-function selectMMSequence()
+function mmSelectSequence()
 {
    echo("selecting sequence! " @ $mmSequenceList.getSelected());
    
@@ -2247,7 +2249,7 @@ function mmAddSequence()
          return;   	  
    } else return;
 
-   selectMMShape();
+   mmSelectShape();
 
    $mmSequenceList.setSelected($mmSequenceList.size()-1);
    
@@ -2266,7 +2268,7 @@ function mmAddSequenceByFilename(%filename)
          return;   //possible repetition of addSequence taking place now...	  
    } else return;
 
-   selectMMShape();
+   mmSelectShape();
 
    $mmSequenceList.setSelected($mmSequenceList.size()-1);
    
@@ -2302,7 +2304,7 @@ function mmAddSceneSequence()
    
 }
    
-function selectMMSequenceNode()
+function mmSelectSequenceNode()
 {   
    %typenames[0]="adjust_pos";
    %typenames[1]="set_pos";
@@ -2345,7 +2347,7 @@ function selectMMSequenceNode()
    }
 }
 
-function selectMMKeyframeSeries()
+function mmSelectKeyframeSeries()
 {
    
    $mmSequenceKeyframeList.clear();
@@ -2379,7 +2381,7 @@ function selectMMKeyframeSeries()
    
 }
 
-function selectMMKeyframe()
+function mmSelectKeyframe()
 {
    if (!isObject($mmSelectedShape))
       return;     
@@ -2411,8 +2413,17 @@ function selectMMKeyframe()
    }   
 }
 
+function mmAddSequenceAction()
+{
+   //nothing here yet   
+}
 
-function assignMMSequenceAction()
+function mmDeleteSequenceAction()
+{
+   //nothing here yet   
+}
+
+function mmAssignSequenceAction()
 {   
    %profile_id = $mmSelectedShape.actionProfileID;
    %seqFile = $mmSequenceFileText.getValue();
@@ -2440,12 +2451,12 @@ function assignMMSequenceAction()
    }   
 }
 
-function unassignMMSequenceAction()
+function mmUnassignSequenceAction()
 {
-   echo("unassignMMSequenceAction is currently unavailable.");   
+   echo("mmUnassignSequenceAction is currently unavailable.");   
 }
 
-function addMattersNode()
+function mmAddMattersNode()
 {
    if (!isObject($mmSelectedShape))
       return;     
@@ -2455,7 +2466,7 @@ function addMattersNode()
    exposeMegaMotionScenesForm();
 }
 
-function dropMattersNode()
+function mmDropMattersNode()
 {
    if (!isObject($mmSelectedShape))
       return;   
@@ -2466,7 +2477,7 @@ function dropMattersNode()
 }
 
 //ultraframe types: 0=ADJUST_NODE_POS, 1=SET_NODE_POS, 2=ADJUST_NODE_ROT, 3=SET_NODE_ROT
-function addMMKeyframe()//This is actually addAdjustKeyframe, it's the + button. Need an addSetKeyframe function,
+function mmAddKeyframe()//This is actually addAdjustKeyframe, it's the + button. Need an addSetKeyframe function,
 { //or else call this one from both with an argument (much better).
    if (!isObject($mmSelectedShape)||($mmSelectedShape.shapeID<=0)||($mmSequenceList.getSelected()<=0))
       return;
@@ -2530,7 +2541,7 @@ function addMMKeyframe()//This is actually addAdjustKeyframe, it's the + button.
    exposeMegaMotionScenesForm();
 }
 
-function deleteMMKeyframe()
+function mmDeleteKeyframe()
 {
    %shape_id = $mmSelectedShape.shapeID;
    %series_id = $mmSequenceKeyframeSeriesList.getSelected();
@@ -2574,13 +2585,15 @@ function deleteMMKeyframe()
 
 //Maybe unnecessary? Adding/deleting keyframe series may just be handled automatically,
 // by adding/deleting keyframes.
-function addMMKeyframeSeries()
+function mmAddKeyframeSeries()
 {   
-}
-function deleteMMKeyframeSeries()
-{   
+   //nothing here yet
 }
 
+function mmDeleteKeyframeSeries()
+{   
+   //nothing here yet
+}
 
 ///////////////////////////////////////////////////////////////////
 // +/-/Set : search for a keyframe on the current frame for the current series. If found update it, if
@@ -2605,8 +2618,8 @@ function mmSetNode()
    %query = "UPDATE keyframe SET x=" @ %x @ ",y=" @ %y @ ",z=" @ %z @ " WHERE id=" @ %keyframe_id @ ";";
    sqlite.query(%query,0);
    
-   loadMMKeyframeSets();
-   selectMMKeyframe();    
+   mmLoadKeyframeSets();
+   mmSelectKeyframe();    
 }
 
 function mmAdjustNode()
@@ -2638,8 +2651,8 @@ function mmAdjustNode()
             " WHERE id=" @ %keyframe_id @ ";";
    sqlite.query(%query,0);
    
-   loadMMKeyframeSets();   
-   selectMMKeyframe(); 
+   mmLoadKeyframeSets();   
+   mmSelectKeyframe(); 
 }
 
 function mmUnadjustNode()
@@ -2675,8 +2688,8 @@ function mmUnadjustNode()
             " WHERE id=" @ %keyframe_id @ ";";
    sqlite.query(%query,0);
    
-   loadMMKeyframeSets();     
-   selectMMKeyframe(); 
+   mmLoadKeyframeSets();     
+   mmSelectKeyframe(); 
    
 }
 
