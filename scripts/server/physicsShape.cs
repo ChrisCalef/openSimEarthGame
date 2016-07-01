@@ -15,16 +15,19 @@ function PhysicsShape::onStartup(%this)
    if (%this.dataBlock $= "M4Physics")
    {
       
-      %this.setNavMesh("Nav");
+      %this.setNavMesh("Nav");//Find in mission, regardless of name?
       
       %this.setActionSeq("ambient","ambient");//This might not always be idle, could be just breathing
       %this.setActionSeq("idle","ambient");// and idle could be that plus fidgeting, etc.
       %this.setActionSeq("walk","walk");
       
       //The reason for ActionSequences is so you don't have to use the same walk or run anim for every actor, 
-         //but you can treat them as if they were all the same in practice.
+         //but you can refer to the action name ("walk","run") everywhere else.
+      %this.setActionSeq("run","run");   
+         
+      //Can just randomize it in script, or leave it up to individual selection by user.
       //if (getRandom()>0.4)
-         %this.setActionSeq("run","run");
+      //   %this.setActionSeq("run","run");
       //else 
       //   %this.setActionSeq("run","runscerd");
          

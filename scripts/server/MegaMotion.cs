@@ -1,15 +1,13 @@
 
 
-$MegaMotionScenesFormID = 159;
-$addMMProjectID = 241;
-$addMMSceneID = 246;
-$addMMSceneShapeID = 247;
-$addMMShapeGroupID = 333;
-$addMMOpenSteerID = 378;
-
+$MegaMotionScenesWindowID = 159;
 $MegaMotionSequenceWindowID = 395;
 
-$MegaMotionFormID = 1;//Testing ground, not a real form.
+$mmAddProjectWindowID = 241;
+$mmAddSceneWindowID = 246;
+$mmAddSceneShapeWindowID = 247;
+$mmAddShapeGroupWindowID = 333;
+$mmAddOpenSteerWindowID = 378;
 
 $mmLastProject = 0;
 $mmLastScene = 0;  
@@ -19,18 +17,69 @@ $mmLoadedShapes = 0;
 
 $mmSelectedShape = 0;
 
+$mmLoopDetecting = false;
+$mmRotDeltaSumMin = 0;
+$mmRotDeltaSumDescending = 0;
+$mmRotDeltaSumLast = 0;
+
+$mmKeyframesRotation = 1;
+$mmKeyframesPosition = 0;
+
+$mmSequenceBlend = 0;
+$mmSequenceLoop = 0;
+$mmSequenceGroundAnimate = 0;
+
+$mmKeyframeID = 0;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function numericTest(%testString)
+{
+   if ((strlen(%testString)==0)||(!isAllNumeric(%testString)))
+      return false;
+   else 
+      return true;  
+}
 
 //$lastScene = 0; //Store selected scene, for when we re-expose form, but we're working on a scene
 //and project that is not the first one.
 function exposeMegaMotionScenesForm()
 {
+   %project_id = 0;
+   %scene_id = 0;
+   %sceneShape_id = 0;
+   %sequence_id = 0;
+   %tab_page = 3;//SceneShapeTab=3, not BvhTab=0
+   
    if (isDefined("MegaMotionScenes"))
+   {
+      %project_id = $mmProjectList.getSelected();
+      %scene_id = $mmSceneList.getSelected();
+      %sceneShape_id = $mmSceneShapeList.getSelected();
+      %sequence_id = $mmSequenceList.getSelected();
+      %tab_page = $mmTabBook.getSelectedPage();
       MegaMotionScenes.delete();
+   }
    
-   makeSqlGuiForm($MegaMotionScenesFormID);
-   
+   %dbRebuild = true;
+   if (%dbRebuild)
+      makeSqlGuiForm($MegaMotionScenesWindowID);
+   else //Hmm, not working, not sure why.
+      exec("../../MegaMotionScenes.gui");//FIX: find or make a directory for these, not game/.
+      
    setupMegaMotionScenesForm();   
+   
+   if ((%project_id>0)&&(%project_id!=$mmProjectList.getSelected()))
+      $mmProjectList.setSelected(%project_id);
+   if ((%scene_id>0)&&(%scene_id!=$mmSceneList.getSelected()))
+      $mmSceneList.setSelected(%scene_id);
+   if ((%sceneShape_id>0)&&(%sceneShape_id!=$mmSceneShapeList.getSelected()))
+      $mmSceneShapeList.setSelected(%sceneShape_id);
+   if ((%sequence_id>0)&&(%sequence_id!=$mmSequenceList.getSelected()))
+      $mmSequenceList.setSelected(%sequence_id);
+      
+   $mmTabBook.selectPage(%tab_page);
+   
 }
 
 function openMegaMotionScenes()
@@ -56,22 +105,36 @@ function setupMegaMotionScenesForm()
    $mmShapeList = MegaMotionScenes.findObjectByInternalName("shapeList"); 
     
    $mmTabBook = MegaMotionScenes.findObjectByInternalName("mmTabBook");    
+   $mmTabBook.allowReorder = true;
 
+   //maybe temporary   
+   $mmSceneShapeTab = $mmTabBook.findObjectByInternalName("sceneShapeTab");
+   $mmShapePartTab = $mmTabBook.findObjectByInternalName("shapePartTab");
+   $mmSequenceTab = $mmTabBook.findObjectByInternalName("sequenceTab");
+   $mmBvhTab = $mmTabBook.findObjectByInternalName("bvhTab");
 
+   $mmShapePartTab.setTabIndex(0);
+   $mmBvhTab.setTabIndex(1);
+   $mmSequenceTab.setTabIndex(2);
+   $mmSceneShapeTab.setTabIndex(3);   
+   $mmTabBook.reArrange();   
+   $mmTabBook.selectPage(3);
+   
    setupMMSceneShapeTab();
    
    setupMMShapePartTab();
    
    setupMMSequenceTab();
 
-   //setupMMShapeMountTab();//?
+   setupMMBvhTab();
    
 }
 
 function setupMMSceneShapeTab()
 {
-   %tab = $mmTabBook.findObjectByInternalName("sceneShapeTab");
-   %panel = %tab.findObjectByInternalName("sceneShapePanel");
+   %panel = $mmSceneShapeTab.findObjectByInternalName("sceneShapePanel");
+   
+   //Can we reduce the number of globals here, by defining them temporarily where needed?
    $mmSceneShapeBehaviorTree = %panel.findObjectByInternalName("sceneShapeBehaviorTree");
    $mmShapeGroupList = %panel.findObjectByInternalName("sceneShapeGroupList");
    $mmSceneShapePositionX = %panel.findObjectByInternalName("sceneShapePositionX");
@@ -89,13 +152,14 @@ function setupMMSceneShapeTab()
 
 function setupMMShapePartTab()
 {
+   %panel = $mmShapePartTab.findObjectByInternalName("shapePartPanel");
    
-   //SHAPEPART TAB
-   %tab = $mmTabBook.findObjectByInternalName("shapePartTab");
-   %panel = %tab.findObjectByInternalName("shapePartPanel");
-   $mmShapePartList = %panel.findObjectByInternalName("shapePartList");
-   
+   $mmShapePartList = %panel.findObjectByInternalName("shapePartList");   
    $mmShapePartTypeList = %panel.findObjectByInternalName("shapePartTypeList");
+   $mmShapePartBaseNodeList = %panel.findObjectByInternalName("shapePartBaseNodeList");   
+   $mmShapePartChildNodeList = %panel.findObjectByInternalName("shapePartChildNodeList");   
+   
+   
    $mmShapePartTypeList.add("Box","0");
    $mmShapePartTypeList.add("Capsule","1");
    $mmShapePartTypeList.add("Sphere","2");
@@ -237,13 +301,34 @@ function setupMMShapePartTab()
 
 function setupMMSequenceTab()
 {
-   
-   %tab = $mmTabBook.findObjectByInternalName("sequenceTab");
-   %panel = %tab.findObjectByInternalName("sequencePanel");
+   %panel = $mmSequenceTab.findObjectByInternalName("sequencePanel");
    
    $mmSequenceList = %panel.findObjectByInternalName("sequenceList");
    $mmSequenceActionList = %panel.findObjectByInternalName("sequenceActionList");
    $mmSequenceFileText = %panel.findObjectByInternalName("sequenceFileText");
+   
+   //Can we reduce the number of globals here, by defining them temporarily where needed?
+   $mmSequenceNodeList = %panel.findObjectByInternalName("sequenceNodeList");
+   $mmSequenceAllNodeList = %panel.findObjectByInternalName("sequenceAllNodeList");
+   $mmSequenceKeyframeSeriesList = %panel.findObjectByInternalName("sequenceKeyframeSeriesList");
+   $mmSequenceKeyframeList = %panel.findObjectByInternalName("sequenceKeyframeList");
+   
+   $mmSequenceKeyframeValueX = %panel.findObjectByInternalName("sequenceKeyframeValueX");
+   $mmSequenceKeyframeValueY = %panel.findObjectByInternalName("sequenceKeyframeValueY");
+   $mmSequenceKeyframeValueZ = %panel.findObjectByInternalName("sequenceKeyframeValueZ");
+   
+   $mmSequenceKeyframeValueX.setText(0);
+   $mmSequenceKeyframeValueY.setText(0);
+   $mmSequenceKeyframeValueZ.setText(0);
+   
+   $mmLoopDetectorDelay = 10;
+   $mmLoopDetectorMax   = 150;
+   $mmLoopDetectorSmooth = 10;
+   
+   $mmGroundCaptureButton = %panel.findObjectByInternalName("groundCaptureButton");
+   
+   //%groundAnimateCheckbox = %panel.findObjectByInternalName("sequenceGroundAnimate");
+   //%groundAnimateCheckbox.setVisible(false);//Turning this off till it gets hooked up.
    
    %query = "SELECT id,name FROM action ORDER BY name;";  
    %resultSet = sqlite.query(%query, 0); 
@@ -271,12 +356,46 @@ function setupMMSequenceTab()
    
 }
 
+function setupMMBvhTab()
+{
+   %panel = $mmBvhTab.findObjectByInternalName("bvhPanel");
+   
+   $mmBvhImportProfileList = %panel.findObjectByInternalName("bvhImportProfileList");
+   $mmBvhExportProfileList = %panel.findObjectByInternalName("bvhExportProfileList");
+   $mmBvhProfileList = %panel.findObjectByInternalName("bvhProfileList");
+   
+   $mmBvhModelNodeList = %panel.findObjectByInternalName("bvhModelNodesList");
+   $mmBvhBvhNodeList = %panel.findObjectByInternalName("bvhBvhNodesList");
+   $mmBvhLinkedNodesList = %panel.findObjectByInternalName("bvhLinkedNodesList");
+   
+   %query = "SELECT id,name FROM bvhProfile;";
+   %resultSet = sqlite.query(%query,0);
+   if (%resultSet)
+   {
+      %firstID = sqlite.getColumn(%resultSet, "id");
+      while (!sqlite.endOfResult(%resultSet))
+      {
+         %id = sqlite.getColumn(%resultSet, "id");
+         %name = sqlite.getColumn(%resultSet, "name");
+            
+         $mmBvhImportProfileList.add(%name,%id);
+         $mmBvhExportProfileList.add(%name,%id);
+         $mmBvhProfileList.add(%name,%id);
+         
+         sqlite.nextRow(%resultSet);   
+      }
+      sqlite.clearResult(%resultSet);
+   }
+   
+}
+
 function updateMegaMotionForm()
 {
    //This is the big Commit Button at the top of the form. 
    //Making it commit whichever tab is on top, plus the 
    
    //NOTE: these need to be fixed anytime we add another tab.
+   %bvhTab = 3;
    %sceneShapeTab = 2;      
    %partsTab = 1;
    %sequencesTab = 0;
@@ -286,7 +405,7 @@ function updateMegaMotionForm()
    echo("Tab book selected page: " @ %selectedTab);
    if (%selectedTab == %sceneShapeTab)
    {
-      //save scene shape data
+      //scene shape data
       //Maybe, first check for each item to be worth saving, ie is valid at least.
       
       updateMMSceneShapeTab();
@@ -294,7 +413,7 @@ function updateMegaMotionForm()
    }
    else if (%selectedTab == %partsTab)
    {
-      //save part data
+      //bodypart physics data
       %partId = $mmShapePartList.getSelected();
       if (%partId<=0)
          return;
@@ -302,9 +421,12 @@ function updateMegaMotionForm()
       updateMMShapePartTab();      
       
    }
-   else if (%selectedTab == %partsTab)
+   else if (%selectedTab == %bvhTab)
    {
-      //save sequence data
+      //bvh profile data
+      
+      
+      updateMMBvhTab();    
    }
    
    if ($mmLoadedScenes>0)
@@ -478,8 +600,50 @@ function updateMMShapePartTab()
    %query = %query @ " WHERE id=" @ %jointId @ ";";
    sqlite.query(%query,0);  
    
+}
+
+function updateMMBvhTab()
+{
+   
+   %tab = $mmTabBook.findObjectByInternalName("bvhTab");
+   %panel = %tab.findObjectByInternalName("bvhPanel");   
+   
+   %skeletonNodeId = $mmBvhLinkedNodesList.getSelected();
+   
+   %poseRotAX = %panel.findObjectByInternalName("bvhPoseRotAX").getText();
+   %poseRotAY = %panel.findObjectByInternalName("bvhPoseRotAY").getText();
+   %poseRotAZ = %panel.findObjectByInternalName("bvhPoseRotAZ").getText();  
+   %poseRotBX = %panel.findObjectByInternalName("bvhPoseRotBX").getText();
+   %poseRotBY = %panel.findObjectByInternalName("bvhPoseRotBY").getText();
+   %poseRotBZ = %panel.findObjectByInternalName("bvhPoseRotBZ").getText();   
+   %fixRotAX = %panel.findObjectByInternalName("bvhFixRotAX").getText();
+   %fixRotAY = %panel.findObjectByInternalName("bvhFixRotAY").getText();
+   %fixRotAZ = %panel.findObjectByInternalName("bvhFixRotAZ").getText();   
+   %fixRotBX = %panel.findObjectByInternalName("bvhFixRotBX").getText();
+   %fixRotBY = %panel.findObjectByInternalName("bvhFixRotBY").getText();
+   %fixRotBZ = %panel.findObjectByInternalName("bvhFixRotBZ").getText(); 
+   
+   %query = "UPDATE bvhProfileSkeletonNode SET ";
+   %query = %query @ "poseRotA_x=" @ %poseRotAX;
+   %query = %query @ ",poseRotA_y=" @ %poseRotAY;
+   %query = %query @ ",poseRotA_z=" @ %poseRotAZ;
+   %query = %query @ ",poseRotB_x=" @ %poseRotBX;
+   %query = %query @ ",poseRotB_y=" @ %poseRotBY;
+   %query = %query @ ",poseRotB_z=" @ %poseRotBZ;
+   %query = %query @ ",fixRotA_x=" @ %fixRotAX;
+   %query = %query @ ",fixRotA_y=" @ %fixRotAY;
+   %query = %query @ ",fixRotA_z=" @ %fixRotAZ;
+   %query = %query @ ",fixRotB_x=" @ %fixRotBX;
+   %query = %query @ ",fixRotB_y=" @ %fixRotBY;
+   %query = %query @ ",fixRotB_z=" @ %fixRotBZ;
+   %query = %query @ " WHERE id=" @ %skeletonNodeId @ ";";
+   //echo(%query);
+   sqlite.query(%query,0);  //HMMM this seems to cause a crash, but not until we're off in the 
+   // keyframes section on reload. (???)
+   
    
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 //REFACTOR: Still working out the MegaMotion vs openSimEarth division of labor.
@@ -682,7 +846,7 @@ function selectMMProject()
 
 function addMMProject()
 {
-   makeSqlGuiForm($addMMProjectID);
+   makeSqlGuiForm($mmAddProjectWindowID);
 }
 
 function reallyAddMMProject()
@@ -801,7 +965,7 @@ function selectMMScene()
 
 function addMMScene()
 {
-   makeSqlGuiForm($addMMSceneID);   
+   makeSqlGuiForm($mmAddSceneWindowID);   
 }
 
 function reallyAddMMScene()  //TO DO: Description, position.
@@ -899,7 +1063,7 @@ function loadMMScene(%id)
 	         "r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle," @ 
 	         "sc.x as scale_x,sc.y as scale_y,sc.z as scale_z," @ 
 	         "sp.x as scene_pos_x,sp.y as scene_pos_y,sp.z as scene_pos_z," @ 
-	         "sh.datablock as datablock " @ 
+	         "sh.datablock as datablock, sf.skeleton_id AS skeleton_id " @ 
 	         "FROM sceneShape ss " @ 
 	         "JOIN scene s ON s.id=scene_id " @
 	         "LEFT JOIN vector3 p ON ss.pos_id=p.id " @ 
@@ -907,6 +1071,7 @@ function loadMMScene(%id)
 	         "LEFT JOIN vector3 sc ON ss.scale_id=sc.id " @ 
 	         "LEFT JOIN vector3 sp ON s.pos_id=sp.id " @ 
 	         "JOIN physicsShape sh ON ss.shape_id=sh.id " @ 
+	         "JOIN shapeFile sf ON sh.file_id=sf.id " @ 
 	         "WHERE scene_id=" @ %id @ ";";  
 	%resultSet = sqlite.query(%query, 0);
 	
@@ -942,6 +1107,7 @@ function loadMMScene(%id)
          %scene_pos_z = sqlite.getColumn(%resultSet, "scene_pos_z");
          
          %datablock = sqlite.getColumn(%resultSet, "datablock");
+         %skeleton_id = sqlite.getColumn(%resultSet, "skeleton_id");
          
          echo("Found a sceneShape: " @ %sceneShape_id @ " " @ %pos_x @ " " @ %pos_y @ " " @ %pos_z @
                 " scenePos " @ %scene_pos_x @ " " @ %scene_pos_y @ " " @ %scene_pos_z );
@@ -982,6 +1148,7 @@ function loadMMScene(%id)
             sceneID = %id;
             openSteerID = %openSteer_id;
             actionProfileID = %actionProfile_id;
+            skeletonID = %skeleton_id;
             targetType = "Health";//"AmmoClip" "Player"
             isDirty = false;
          };
@@ -996,7 +1163,6 @@ function loadMMScene(%id)
             %temp.schedule(30,"setBehavior",%behaviorTree);
             //echo(%temp.getId() @ " assigning behavior tree: " @ %behaviorTree );
          }
-
          sqlite.nextRow(%resultSet);
       }
    }   
@@ -1029,7 +1195,7 @@ function loadMMKeyframeSets()
       {
          %found = 0;
          for (%j=0;%j<%numShapes;%j++)
-            if (%shapes[%j]==%shape_id)
+            if (%shape_ids[%j]==%shape_id)
                %found=1;         
          if (%found==0)
          {
@@ -1052,7 +1218,7 @@ function loadMMKeyframeSets()
       while (!sqlite.endOfResult(%resultSet))
       { 
          %set_id = sqlite.getColumn(%resultSet,"id");
-         %sequence = sqlite.getColumn(%resultSet,"sequence_file");
+         %sequence = sqlite.getColumn(%resultSet,"sequence_name");
          %name = sqlite.getColumn(%resultSet,"name");
          
          %shape.addKeyframeSet(%sequence);
@@ -1067,7 +1233,7 @@ function loadMMKeyframeSets()
             
             %shape.addKeyframeSeries(%type,%node);
             
-            %query3 = "SELECT * FROM keyframe WHERE series_id=" @ %series_id @ ";";
+            %query3 = "SELECT * FROM keyframe WHERE series_id=" @ %series_id @ " ORDER BY frame;";
             %resultSet3 = sqlite.query(%query3,0);
             while (!sqlite.endOfResult(%resultSet3))
             {
@@ -1077,8 +1243,6 @@ function loadMMKeyframeSets()
                %z = sqlite.getColumn(%resultSet3,"z");
                
                %shape.addKeyframe(%frame,%x,%y,%z);
-               
-               echo("added keyframe: " @ %frame @ " " @ %x @ " " @ %y @ " " @ %z );
                
                sqlite.nextRow(%resultSet3); 
             }            
@@ -1122,13 +1286,30 @@ function unloadMMScene(%id)
    }   
 }
 
-function selectMMSceneShape()
+function mmSelectSceneShape()
 {
    echo("selecting mm scene shape!!!!");
    if ($mmSceneShapeList.getSelected()<=0)
       return;
         
    %scene_shape_id = $mmSceneShapeList.getSelected();
+   
+   $mmSequenceList.clear();
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
+   {
+      %obj = SceneShapes.getObject(%i);  
+      if (%obj.sceneShapeID==%scene_shape_id)
+      {
+         $mmSelectedShape = %obj;       
+         %numSeqs = $mmSelectedShape.getNumSeqs();
+         for (%j=0;%j<%numSeqs;%j++)
+         {
+            %name = $mmSelectedShape.getSeqName(%j);
+            $mmSequenceList.add(%name,%j);         
+         }
+      }
+   }
+   
    //%query = "SELECT * FROM sceneShape WHERE id=" @ %sceneShapeId @ ";";  
 	%query = "SELECT shape_id,ss.name,shapeGroup_id,behavior_tree,openSteerProfile_id," @ 
 	         "ss.pos_id AS pos_id,p.x AS pos_x,p.y AS pos_y,p.z AS pos_z," @ 
@@ -1187,27 +1368,11 @@ function selectMMSceneShape()
       
       sqlite.clearResult(%resultSet);
    }
-   
-   $mmSequenceList.clear();
-   for (%i = 0; %i < SceneShapes.getCount();%i++)
-   {
-      %obj = SceneShapes.getObject(%i);  
-      if (%obj.sceneShapeID==%scene_shape_id)
-      {
-         $mmSelectedShape = %obj;//Maybe? In case we need it later.         
-         %numSeqs = $mmSelectedShape.getNumSeqs();
-         for (%j=0;%j<%numSeqs;%j++)
-         {
-            %name = $mmSelectedShape.getSeqName(%j);
-            $mmSequenceList.add(%name,%j);         
-         }
-      }
-   }
 }
 
 function addMMSceneShape()
 {
-   makeSqlGuiForm($addMMSceneShapeID);   
+   makeSqlGuiForm($mmAddSceneShapeWindowID);   
    setupAddMMSceneShapeForm();
 }
 
@@ -1250,11 +1415,6 @@ function reallyDeleteMMSceneShape(%id)
                            //together whenever possible just in case. (didn't work?)
 }
 
-
-//May return to behaviorTree being a dropdown, but put it back to textEdit for now.
-//function selectMMSceneShapeBehavior()
-//{
-//}
 
 function selectMMShapeGroup()
 {
@@ -1311,7 +1471,6 @@ function selectMMShape()
       return;
       
    $mmShapePartList.clear();   
-   
    %firstID = 0;
    %query = "SELECT id,name FROM physicsShapePart WHERE physicsShape_id=" @ $mmShapeList.getSelected() @ ";";  
    echo("\n" @ %query @ "\n");   
@@ -1333,9 +1492,19 @@ function selectMMShape()
       }
       sqlite.clearResult(%resultSet);
    }   
-   
-   //Now, node lists: this is based on querying the actual TSShape object, not the database.
-   //But, oh crap, this can only work if we have a live instance of the shape in the scene.
+
+   $mmShapePartBaseNodeList.clear();
+   $mmShapePartChildNodeList.clear();
+   $mmSequenceAllNodeList.clear();
+   $mmBvhModelNodeList.clear();
+   for (%i=0;%i<$mmSelectedShape.getNumNodes();%i++)
+   {
+      %node_name = $mmSelectedShape.getNodeName(%i);
+      $mmShapePartBaseNodeList.add(%node_name,%i);
+      $mmShapePartChildNodeList.add(%node_name,%i);
+      $mmSequenceAllNodeList.add(%node_name,%i);
+      $mmBvhModelNodeList.add(%node_name,%i);
+   }
    
    //Whoops, gotta be much more careful about not doing this on selecting scene shape, only on changing shape.
    //Finally, see if we want to change the shape of the currently selected sceneShape.
@@ -1472,6 +1641,9 @@ function selectMMJoint()
       
    %tab = $mmTabBook.findObjectByInternalName("shapePartTab");
    %panel = %tab.findObjectByInternalName("shapePartPanel");
+
+   %jointCount = $mmJointList.size();   
+   echo("selecting joint " @ %jointId @ "!  numJoints " @ %jointCount ); 
    
    %twistLimit = %panel.findObjectByInternalName("jointTwistLimit");
    %swingLimit = %panel.findObjectByInternalName("jointSwingLimit");
@@ -1736,7 +1908,7 @@ function reallyAddMMSceneShape() //TO DO: pos/rot/scale, shapeGroup, behaviorTre
 
 function addMMShapeGroup() 
 {
-   makeSqlGuiForm($addMMShapeGroupID);
+   makeSqlGuiForm($mmAddShapeGroupWindowID);
 }
 
 function reallyAddMMShapeGroup() 
@@ -1804,7 +1976,7 @@ function addMMSceneShapeBlock()
 
 function addMMOpenSteer()
 {
-   makeSqlGuiForm($addMMOpenSteerID);
+   makeSqlGuiForm($mmAddOpenSteerWindowID);
 }
 
 function reallyAddMMOpenSteer()
@@ -1895,24 +2067,350 @@ function selectMMOpenSteer()
 
 function selectMMSequence()
 {
-   if (($mmSequenceList.getSelected()<=0)||($mmSelectedShape<=0))
+   echo("selecting sequence! " @ $mmSequenceList.getSelected());
+   
+   $mmSequenceNodeList.clear();    
+   $mmSequenceKeyframeSeriesList.clear();  
+   $mmSequenceKeyframeList.clear();
+   
+   if (($mmSequenceList.getSelected()<=0)||($mmSelectedShape<=0) || (!isObject($mmSelectedShape)))
    {
       $mmSequenceFileText.setText("");
       return;
    }
+   
    %seq_id = $mmSequenceList.getSelected();
    $mmSequenceFileText.setText($mmSelectedShape.getSeqFilename(%seq_id));
    
-   if (MegaMotionSequenceWindow.isVisible())
-   {
-      $mmSequenceSlider.range = "0 " @ $mmSelectedShape.getSeqFrames(%seq_id);
-      $mmSequenceSlider.value = 0;
-   }
+   $mmSequenceBlend = $mmSelectedShape.getSeqBlend(%seq_id);
+   $mmSequenceCyclic = $mmSelectedShape.getSeqCyclic(%seq_id);
    
    $mmSelectedShape.playSeqByNum($mmSequenceList.getSelected());
    $mmSelectedShape.pauseSeq();
    $mmSelectedShape.setSeqPos(0);
+   
+     
+   %numNodes = $mmSelectedShape.getNumMattersNodes(%seq_id);
+   for (%i=0;%i<%numNodes;%i++)
+   {
+      //echo("sequence " @ %seq_id @ " nodes, mattersNode " @ $mmSelectedShape.getMattersNodeIndex(%seq_id,%i) @
+      //       " nodeMatters " @ $mmSelectedShape.getNodeMattersIndex(%seq_id,%i)); 
+      %node_index = $mmSelectedShape.getMattersNodeIndex(%seq_id,%i);
+      %node_name = $mmSelectedShape.getNodeName(%node_index);
+      $mmSequenceNodeList.add(%node_name,%node_index);
+   }
+   
+   %typenames[0]="adjust_pos";
+   %typenames[1]="set_pos";
+   %typenames[2]="adjust_rot";
+   %typenames[3]="set_rot";
+   
+   $mmSequenceKeyframeSeriesList.add("",0);   
+   %firstID = 0;
+   %query = "SELECT id,type,node FROM keyframeSeries WHERE set_id IN" @
+            " (SELECT id FROM keyframeSet" @ 
+            " WHERE shape_id=" @ $mmSelectedShape.shapeID @ 
+            " AND sequence_name='" @ $mmSequenceList.getText() @ "');"; 
+   %resultSet = sqlite.query(%query, 0); 
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {
+         %firstID = sqlite.getColumn(%resultSet, "id");
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %type = sqlite.getColumn(%resultSet, "type");
+            %typename = %typenames[%type];
+            %node = sqlite.getColumn(%resultSet, "node"); 
+            %nodename =  $mmSelectedShape.getNodeName(%node);    
+            %name =  %nodename @ " - " @ %typename @ " " @ %id;
+            $mmSequenceKeyframeSeriesList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         //if (%firstID>0) 
+         //   $mmSequenceKeyframeSeriesList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }
+   
+   $mmSequenceKeyframeList.clear();
+   %firstID = 0;
+   %query = "SELECT id,frame,x,y,z FROM keyframe WHERE series_id=" @
+            $mmSequenceKeyframeSeriesList.getSelected() @ ";";
+   %resultSet = sqlite.query(%query, 0); 
+   
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {
+         %firstID = sqlite.getColumn(%resultSet, "id");
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %frame = sqlite.getColumn(%resultSet, "frame");
+            %x = sqlite.getColumn(%resultSet, "x");
+            %y = sqlite.getColumn(%resultSet, "y");
+            %z = sqlite.getColumn(%resultSet, "z");              
+            %name = "frame " @  %frame ;// @ " value " @ %x @ " " @ %y @ " " @ %z  ;
+            $mmSequenceKeyframeList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         //if (%firstID>0) 
+          //  $mmSequenceKeyframeList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   if (MegaMotionSequenceWindow.isVisible())
+   {
+      %frames = $mmSelectedShape.getSeqFrames(%seq_id);
+      $mmSequenceSlider.range = "0 " @ %frames;
+      $mmSequenceSlider.value = 0;
+      $mmSequenceOutFrame.setText(%frames);
+   }
+   echo("ended selectSequence!");
+   
 }
+
+/*
+////(FROM EM) //////0
+      
+toolsWindow::selectSequence()
+{
+   ...
+   
+      if ($actor.getSeqNumKeyframes(%seqnum) == $actor.getSeqNumGroundFrames(%seqnum))
+      {
+         $sequence_ground_animate = true;
+         groundCaptureSeqButton.setText("Un Ground Capture");
+         GroundAnimateCheckbox.visible = true;
+      } else {
+         $sequence_ground_animate = false;
+         groundCaptureSeqButton.setText("Ground Capture");
+         GroundAnimateCheckbox.visible = false;
+      }
+
+   ...     
+}
+      
+function EcstasyToolsWindow::toggleGroundAnimate()
+{
+   if (EWorldEditor.getSelectionSize()>0)
+   {
+      for (%i=0;%i<EWorldEditor.getSelectionSize();%i++)
+      {
+         %obj = EWorldEditor.getSelectedObject( %i );
+         if (%obj)
+         {
+           if (%obj.getClassName() $= "fxFlexBody")
+           {
+              //echo("playing sequence " @ SequencesList.getText() @ " on actor " @ %obj.gatActorID());
+               %ghostID = LocalClientConnection.getGhostID(%obj);
+               %client_bot = ServerConnection.resolveGhostID(%ghostID);
+               %client_bot.setGroundAnimating($tweaker_ground_animate);           
+           }
+         }
+      }
+   } 
+   else if ($actor) 
+   {
+      $actor.setGroundAnimating($tweaker_ground_animate);
+   }
+}
+
+
+
+*/
+
+   //Nice thought, but nope:
+   //%query = "SELECT id,frame,x,y,z FROM keyframe WHERE series_id IN" @ 
+   //         " (SELECT id FROM keyframeSeries WHERE set_id IN" @ 
+   //         " (SELECT id FROM keyframeSet" @ 
+   //         " WHERE shape_id=" @ $mmSelectedShape.shapeID @ 
+   //         " AND sequence_name='" @ $mmSequenceList.getText() @ "'));";  
+   
+function mmAddSequence()
+{
+   if (!isObject($mmSelectedShape))
+      return;
+         
+   if (strlen($Pref::DsqDir))
+      %openFileName = mmGetOpenFilename($Pref::DsqDir,"dsq");
+   else
+      %openFileName = mmGetOpenFilename($mmSelectedShape.getPath(),"dsq");
+   
+   if (strlen(%openFileName))
+   {     
+      %openFileName = strreplace(%openFileName,"'","''");//Escape single quotes in the name.
+      if (!$mmSelectedShape.loadSequence(%openFileName))
+         return;   	  
+   } else return;
+
+   selectMMShape();
+
+   $mmSequenceList.setSelected($mmSequenceList.size()-1);
+   
+   return;
+}
+
+function mmAddSequenceByFilename(%filename)
+{   
+   if (!isObject($mmSelectedShape))
+      return;      
+   
+   if (strlen(%filename))
+   {       
+     %filename = strreplace(%filename,"'","''");//Escape single quotes in the name.
+      if (!$mmSelectedShape.loadSequence(%filename))
+         return;   //possible repetition of addSequence taking place now...	  
+   } else return;
+
+   selectMMShape();
+
+   $mmSequenceList.setSelected($mmSequenceList.size()-1);
+   
+   return;   
+}
+
+function mmDropSequence()
+{
+   if (!isObject($mmSelectedShape))
+      return;     
+       
+   $mmSelectedShape.dropSequence($mmSequenceList.getSelected());
+    
+}
+   
+function mmSaveSequence()
+{
+   if (!isObject($mmSelectedShape))
+      return;      
+       
+   if (strlen($Pref::DsqDir))
+      %saveFileName = mmGetSaveFileName($Pref::DsqDir,"dsq");
+   else
+      %saveFileName = mmGetSaveFileName($actor.getPath(),"dsq");
+         
+   $mmSelectedShape.saveSequence($mmSequenceList.getSelected(),%saveFileName);
+   
+ 
+}
+   
+function mmAddSceneSequence()
+{
+   
+}
+   
+function selectMMSequenceNode()
+{   
+   %typenames[0]="adjust_pos";
+   %typenames[1]="set_pos";
+   %typenames[2]="adjust_rot";
+   %typenames[3]="set_rot";
+   
+   $mmSequenceKeyframeSeriesList.clear();   
+   %firstID = 0;
+   %node_id = $mmSequenceNodeList.getSelected();
+   %query = "SELECT id,type FROM keyframeSeries WHERE node=" @ %node_id @ 
+            " AND set_id IN (SELECT id FROM keyframeSet" @ 
+            " WHERE shape_id=" @ $mmSelectedShape.shapeID @ 
+            " AND sequence_name='" @ $mmSequenceList.getText() @ "');"; 
+   %resultSet = sqlite.query(%query, 0); 
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {
+         %firstID = sqlite.getColumn(%resultSet, "id");
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %type = sqlite.getColumn(%resultSet, "type");
+            %typename = %typenames[%type];
+            %nodename =  $mmSelectedShape.getNodeName(%node_id);    
+            %name =  %nodename @ " - " @ %typename @ " " @ %id;
+            $mmSequenceKeyframeSeriesList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         if (%firstID>0) 
+            $mmSequenceKeyframeSeriesList.setSelected(%firstID);
+      } 
+      else 
+      {
+         $mmSequenceKeyframeSeriesList.clear();
+         $mmSequenceKeyframeList.clear();     
+         $mmKeyframeID = 0;    
+      }
+      sqlite.clearResult(%resultSet);
+   }
+}
+
+function selectMMKeyframeSeries()
+{
+   
+   $mmSequenceKeyframeList.clear();
+   %firstID = 0;
+   %query = "SELECT id,frame,x,y,z FROM keyframe WHERE series_id=" @
+            $mmSequenceKeyframeSeriesList.getSelected() @ ";";
+   %resultSet = sqlite.query(%query, 0); 
+   
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {
+         %firstID = sqlite.getColumn(%resultSet, "id");
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %frame = sqlite.getColumn(%resultSet, "frame");
+            %x = sqlite.getColumn(%resultSet, "x");
+            %y = sqlite.getColumn(%resultSet, "y");
+            %z = sqlite.getColumn(%resultSet, "z");              
+            %name = "frame " @  %frame ; // @ " value " @ %x @ " " @ %y @ " " @ %z  ;
+            $mmSequenceKeyframeList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         if (%firstID>0) 
+            $mmSequenceKeyframeList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   
+}
+
+function selectMMKeyframe()
+{
+   if (!isObject($mmSelectedShape))
+      return;     
+   
+   %panel = $mmSequenceTab.findObjectByInternalName("sequencePanel");
+   %sumX = %panel.findObjectByInternalName("sequenceKeyframeSumX");
+   %sumY = %panel.findObjectByInternalName("sequenceKeyframeSumY");
+   %sumZ = %panel.findObjectByInternalName("sequenceKeyframeSumZ");
+   %frame = %panel.findObjectByInternalName("sequenceKeyframeFrame");
+   
+   $mmKeyframeID = $mmSequenceKeyframeList.getSelected();
+   %query = "SELECT id,frame,x,y,z FROM keyframe WHERE id=" @ $mmKeyframeID @ ";";
+   %resultSet = sqlite.query(%query, 0); 
+   if (%resultSet)
+   {
+      %frame = sqlite.getColumn(%resultSet, "frame");
+      %x = sqlite.getColumn(%resultSet, "x");
+      %y = sqlite.getColumn(%resultSet, "y");
+      %z = sqlite.getColumn(%resultSet, "z"); 
+       
+      %sumX.setText(%x);
+      %sumY.setText(%y);
+      %sumZ.setText(%z);  
+      
+      %frame.setText(%frame);      
+      $mmSequenceSlider.setValue(%frame);
+      $mmSelectedShape.setSeqPos(%frame/$mmSequenceSlider.range.y);
+      $mmSelectedShape.pauseSeq();
+   }   
+}
+
 
 function assignMMSequenceAction()
 {   
@@ -1930,79 +2428,652 @@ function assignMMSequenceAction()
    if (%resultSet)
    {
       %actionSeq_id = sqlite.getColumn(%resultSet,"id");
-      %query = "UPDATE actionProfileSequence SET sequence_file='" @ 
+      %query = "UPDATE actionProfileSequence SET sequence_name='" @ 
                %seqFile @ "' WHERE id=" @ %actionSeq_id @ ";";
       sqlite.query(%query,0);
    }
    else
    {
-      %query = "INSERT INTO actionProfileSequence (profile_id,action_id,sequence_file) " @
+      %query = "INSERT INTO actionProfileSequence (profile_id,action_id,sequence_name) " @
                "VALUES (" @ %profile_id @ "," @ %action_id @ ",'" @ %seqFile @ "');";
       sqlite.query(%query,0);      
-   }
-   
+   }   
 }
 
 function unassignMMSequenceAction()
 {
-   echo("unassignMMSequenceAction is currently unavailable.");
+   echo("unassignMMSequenceAction is currently unavailable.");   
 }
 
-
-function addMMKeyframe()
+function addMattersNode()
 {
+   if (!isObject($mmSelectedShape))
+      return;     
+      
+   $mmSelectedShape.addMattersNode($mmSequenceList.getSelected(),$mmSequenceAllNodeList.getSelected());
    
+   exposeMegaMotionScenesForm();
+}
+
+function dropMattersNode()
+{
+   if (!isObject($mmSelectedShape))
+      return;   
+  
+   $mmSelectedShape.dropMattersNode($mmSequenceList.getSelected(),$mmSequenceAllNodeList.getSelected());
+   
+   exposeMegaMotionScenesForm();
+}
+
+//ultraframe types: 0=ADJUST_NODE_POS, 1=SET_NODE_POS, 2=ADJUST_NODE_ROT, 3=SET_NODE_ROT
+function addMMKeyframe()//This is actually addAdjustKeyframe, it's the + button. Need an addSetKeyframe function,
+{ //or else call this one from both with an argument (much better).
+   if (!isObject($mmSelectedShape)||($mmSelectedShape.shapeID<=0)||($mmSequenceList.getSelected()<=0))
+      return;
+      
+   //First check the slider frame, see if we're sitting on a keyframe via db query, and if so then
+   //update that one, else make a new one. But wait, if we hit + it's because we explicitly want a new one.
+   //For now let's just focus on making new ones. Assume XYZ values and node list are loaded for us, use them.
+   %shape_id = $mmSelectedShape.shapeID;
+   %series_id = $mmSequenceKeyframeSeriesList.getSelected();
+   %node = $mmSequenceNodeList.getSelected();
+   %frame = mFloor($mmSequenceSlider.getValue());
+   %x = $mmSequenceKeyframeValueX.getText();
+   %y = $mmSequenceKeyframeValueY.getText();
+   %z = $mmSequenceKeyframeValueZ.getText(); 
+    
+   %type = 2;
+   if ($mmKeyframesRotation)
+      %type = 2;
+   else //if ($mmKeyframesPosition)
+      %type = 0;
+   
+   if (%series_id>0)
+   { 
+      %query = "INSERT INTO keyframe (series_id,frame,x,y,z) VALUES (" @ %series_id @ "," @
+               %frame @ "," @ %x @ "," @ %y @ "," @ %z @ ");";
+      sqlite.query(%query,0);
+   } else {
+      %query = "SELECT * FROM keyframeSet WHERE shape_id=" @ %shape_id @ 
+               " AND sequence_name='" @ $mmSequenceList.getText() @ "';";
+      %resultSet = sqlite.query(%query,0);
+      if (sqlite.numRows(%resultSet)==1)
+      {
+         %set_id = sqlite.getColumn(%resultSet,"id");
+         sqlite.clearResult(%resultSet);
+      }
+      if (%set_id>0)
+      { 
+         %query = "INSERT INTO keyframeSeries (set_id,type,node) VALUES (" @ %set_id @ "," @
+                  %type @ "," @ %node @ ");";
+         sqlite.query(%query,0);      
+      
+         %query = "INSERT INTO keyframe (series_id,frame,x,y,z) VALUES (last_insert_rowid()" @ 
+                  "," @ %frame @ "," @ %x @ "," @ %y @ "," @ %z @ ");";
+         sqlite.query(%query,0);
+      } 
+      else 
+      {      
+         %query = "INSERT INTO keyframeSet (shape_id,sequence_name) VALUES (" @ %shape_id @ ",'" @
+               $mmSequenceList.getText() @ "');";
+         sqlite.query(%query,0);
+         
+         %query = "INSERT INTO keyframeSeries (set_id,type,node) VALUES (last_insert_rowid()," @  
+                   %type @ "," @ %node @ ");";
+         sqlite.query(%query,0);
+         
+         %query = "INSERT INTO keyframe (series_id,frame,x,y,z) VALUES (last_insert_rowid()" @ 
+                  "," @ %frame @ "," @ %x @ "," @ %y @ "," @ %z @ ");";
+         sqlite.query(%query,0);  
+      }
+   }   
+   exposeMegaMotionScenesForm();
 }
 
 function deleteMMKeyframe()
 {
-   
+   %shape_id = $mmSelectedShape.shapeID;
+   %series_id = $mmSequenceKeyframeSeriesList.getSelected();
+   %keyframe_id = $mmSequenceKeyframeList.getSelected();
+   if (%keyframe_id>0)
+   {
+      %query = "DELETE FROM keyframe WHERE id=" @ %keyframe_id @ ";";
+      sqlite.query(%query,0);
+      
+      //See if this series has other keyframes, if so we're done. If not delete it, and possibly the set.
+      %query = "SELECT id FROM keyframe WHERE series_id=" @ %series_id @ ";";
+      %resultSet = sqlite.query(%query,0);
+      if (sqlite.numRows(%resultSet)>0)
+         return; //didn't clear result before returning... but is it really necessary? 
+      sqlite.clearResult(%resultSet);
+      
+      //Now, see if there are any other keyframeSeries sharing this set_id, and if not, delete the set.
+      //FIX: we should really start doing this on the SQLite side with foreign keys and cascading deletes.
+      %query = "SELECT set_id FROM keyframeSeries WHERE id=" @ %series_id @ ";";
+      %resultSet = sqlite.query(%query,0);
+      %set_id = sqlite.getColumn(%resultSet,"set_id");            
+      sqlite.clearResult(%resultSet);
+      
+      %query = "SELECT id FROM keyframeSeries WHERE set_id=" @ %set_id @ " AND id!=" @ %series_id @ ";";
+      %resultSet2 = sqlite.query(%query,0);  
+      
+      %query = "DELETE FROM keyframeSeries WHERE id=" @ %series_id @ ";";
+      sqlite.query(%query);
+      if (sqlite.numRows(%resultSet2)>0)
+      {
+         echo("Found more keyframeSeries in this set, not deleting it.");
+         return;
+      }         
+      sqlite.clearResult(%resultSet2);
+
+      %query = "DELETE FROM keyframeSet WHERE id=" @ %set_id @ ";";
+      sqlite.query(%query,0);
+   }   
+   //exposeMegaMotionScenesForm();
 }
 
+//Maybe unnecessary? Adding/deleting keyframe series may just be handled automatically,
+// by adding/deleting keyframes.
 function addMMKeyframeSeries()
-{
-   
+{   
 }
-
 function deleteMMKeyframeSeries()
-{
-   
+{   
 }
 
-function deleteMMKeyframesByNode()
+
+///////////////////////////////////////////////////////////////////
+// +/-/Set : search for a keyframe on the current frame for the current series. If found update it, if
+//not found either create a new one on the fly, or call up a gui and ask nicely. (Decide after testing.)
+//If doing it on the fly, allow unselecting all series on the series list, and then when you hit 
+//the +/-/set buttons it will automatically make a new series, starting with a single frame.
+ 
+function mmSetNode()
 {
+   %keyframe_id = $mmSequenceKeyframeList.getSelected();
+   if (%keyframe_id<=0)
+      return;
    
+   %x = $mmSequenceKeyframeValueX.getText();
+   %y = $mmSequenceKeyframeValueY.getText();
+   %z = $mmSequenceKeyframeValueZ.getText();
+   if (strlen(%x)==0) %x=0;
+   if (strlen(%y)==0) %y=0;
+   if (strlen(%z)==0) %z=0;
+   
+      
+   %query = "UPDATE keyframe SET x=" @ %x @ ",y=" @ %y @ ",z=" @ %z @ " WHERE id=" @ %keyframe_id @ ";";
+   sqlite.query(%query,0);
+   
+   loadMMKeyframeSets();
+   selectMMKeyframe();    
 }
 
 function mmAdjustNode()
 {
+   %keyframe_id = $mmSequenceKeyframeList.getSelected();
+   if (%keyframe_id<=0)
+      return;
    
+   %query = "SELECT x,y,z FROM keyframe WHERE id=" @ %keyframe_id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   %sumX = %sumY = %sumZ = 0;
+   if (sqlite.numRows(%resultSet)==1)
+   {
+      %sumX = sqlite.getColumn(%resultSet,"x");
+      %sumY = sqlite.getColumn(%resultSet,"y");
+      %sumZ = sqlite.getColumn(%resultSet,"z");
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   %x = $mmSequenceKeyframeValueX.getText();
+   %y = $mmSequenceKeyframeValueY.getText();
+   %z = $mmSequenceKeyframeValueZ.getText();
+   
+   if (strlen(%x)==0) %x=0;
+   if (strlen(%y)==0) %y=0;
+   if (strlen(%z)==0) %z=0;
+         
+   %query = "UPDATE keyframe SET x=" @ %sumX + %x @ ",y=" @ %sumY + %y @ ",z=" @ %sumZ + %z @ 
+            " WHERE id=" @ %keyframe_id @ ";";
+   sqlite.query(%query,0);
+   
+   loadMMKeyframeSets();   
+   selectMMKeyframe(); 
 }
 
 function mmUnadjustNode()
 {
+   %keyframe_id = $mmSequenceKeyframeList.getSelected();
+   if (%keyframe_id<=0)
+      return;
    
-}
-
-function mmSetNode()
-{
+   %query = "SELECT x,y,z FROM keyframe WHERE id=" @ %keyframe_id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   %sumX = %sumY = %sumZ = 0;
+   if (sqlite.numRows(%resultSet)==1)
+   {
+      %sumX = sqlite.getColumn(%resultSet,"x");
+      %sumY = sqlite.getColumn(%resultSet,"y");
+      %sumZ = sqlite.getColumn(%resultSet,"z");
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   %x = $mmSequenceKeyframeValueX.getText();
+   %y = $mmSequenceKeyframeValueY.getText();
+   %z = $mmSequenceKeyframeValueZ.getText();
+   
+   if (strlen(%x)==0) %x=0;
+   if (strlen(%y)==0) %y=0;
+   if (strlen(%z)==0) %z=0;
+   
+   %x *= -1;
+   %y *= -1; 
+   %z *= -1;
+       
+   %query = "UPDATE keyframe SET x=" @ %sumX + %x @ ",y=" @ %sumY + %y @ ",z=" @ %sumZ + %z @ 
+            " WHERE id=" @ %keyframe_id @ ";";
+   sqlite.query(%query,0);
+   
+   loadMMKeyframeSets();     
+   selectMMKeyframe(); 
    
 }
 
 function mmStartCentered()
 {
-   
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %seq = $mmSequenceList.getSelected();
+   if (%seq > -1) 
+   {  
+      %initialPos = $mmSelectedShape.getNodeTrans(%seq,0);//returns frame zero
+      %deltaX = -1 * getWord(%initialPos,0);
+      %deltaY = -1 * getWord(%initialPos,1);
+      %deltaZ = 0;
+      %deltaPos = %deltaX @ " " @ %deltaY @ " " @ %deltaZ;
+      $mmSelectedShape.adjustBaseNodePosRegion(%seq,%deltaPos,0.0,1.0);
+   }
 }
 
 function mmFaceForward()
 {
-   
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %seq = $mmSequenceList.getSelected();
+   if (%seq > -1)
+   {  
+      %initialRot = $mmSelectedShape.getNodeRot(%seq,0,0);//returns frame zero
+      %deltaX = 0;//-1 * getWord(%initialRot,0); //See how this works...
+      %deltaY = 0;//-1 * getWord(%initialRot,1);
+      %deltaZ = getWord(%initialRot,2);
+      %deltaRot = %deltaX @ " " @ %deltaY @ " " @ %deltaZ;
+      $mmSelectedShape.adjustNodeRotRegion(%seq,0,%deltaRot,0.0,1.0);
+   }
 }
 
 function mmMoveForward()
 {
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %seq = $mmSequenceList.getSelected();
+   if (%seq > -1)
+   {
+      %startPos = $mmSelectedShape.getNodeTrans(%seq,0);
+      %finalPos = $mmSelectedShape.getNodeTrans(%seq,$mmSelectedShape.getSeqNumKeyframes(%seq)-1);
+      %diff = VectorNormalize(VectorSub(%finalPos,%startPos));
+
+      %forward = "0 1 0";
+      %eulerArc = "0 0 0";
+      if (VectorDot(%diff,%forward) < -0.999)//(ie, within small tolerance of 180 degrees opposite)
+         %eulerArc = "0 0 180";
+      else
+      {
+         //HERE: find the Z rotation!
+         %eulerArc = rotationArcDegrees(%diff,%forward);//Actually, all rotations...
+         echo("anim diff: " @ %diff @ ", euler arc: " @ %eulerArc);         
+      }
+      //%deltaRot = "0 0 " @ %deltaZ;
+      $mmSelectedShape.adjustNodeRotRegion(%seq,0,%eulerArc,0.0,1.0); 
+   }
+}
+
+
+function mmGroundCaptureSeq(%this)
+{
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %seq = $mmSequenceList.getSelected();
+   if ($mmSelectedShape.getSeqFrames(%seqnum) == $mmSelectedShape.getSeqGroundFrames(%seq))
+   {
+      $mmSelectedShape.unGroundCaptureSeq(%seq); 
+      //GroundAnimateCheckbox.visible = false;
+      $mmGroundCaptureButton.setText("Ground Capture");
+      //SequenceNumGroundframes.setText($actor.getSeqNumGroundFrames(%seq));
+   } else {
+      $mmSelectedShape.groundCaptureSeq(%seq);
+      //GroundAnimateCheckbox.visible = true;
+      $mmGroundCaptureButton.setText("Un Ground Capture");
+      //SequenceNumGroundframes.setText($actor.getSeqNumGroundFrames(%seq));
+   }
+   //EcstasyToolsWindow::updateSeqForm(%this);
+}
+
+function mmSequenceBlendToggle()
+{
+   %seq = $mmSequenceList.getSelected();
+   if ((!isObject($mmSelectedShape))||(!(%seq>=0)))
+      return;
+      
+   $mmSelectedShape.setSeqBlend(%seq,$mmSequenceBlend);
+}
+
+function mmSequenceCyclicToggle()
+{
+   %seq = $mmSequenceList.getSelected();
+   if ((!isObject($mmSelectedShape))||(!(%seq>=0)))
+      return;
+   
+   $mmSelectedShape.setSeqCyclic(%seq,$mmSequenceCyclic);
+}
+
+function mmSequenceGroundAnimateToggle()
+{
+   %seq = $mmSequenceList.getSelected();
+   if ((!isObject($mmSelectedShape))||(!(%seq>=0)))
+      return;
    
 }
+
+
+
+
+/////////////////////////////////////////////////////////
+//BVH Tab
+function mmImportBvhSequence()
+{
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   if (strlen($Pref::BvhDir))
+      %openFileName = mmGetOpenFilename($Pref::BvhDir,"bvh");
+   else
+      %openFileName = mmGetOpenFilename($mmSelectedShape.getPath(),"bvh");
+        
+   
+   $mmSelectedShape.importBvh(false,%openFileName,$mmBvhImportProfileList.getText(),false);
+   
+}
+
+function mmImportBvhDirectory()
+{
+   
+}
+
+function mmBvhImportScene()
+{
+   
+}
+
+function mmExportBvhSequence()
+{
+   if (strlen($Pref::BvhDir))
+      %saveFileName = mmGetSaveFilename($Pref::BvhDir,"bvh");
+   else
+      %saveFileName = mmGetSaveFilename($mmSelectedShape.getPath(),"bvh");
+       
+   $mmSelectedShape.saveBvh(false,%saveFileName,$mmBvhExportProfileList.getText(),false);
+   
+}
+
+function mmExportBvhDirectory()
+{
+   
+}
+
+function mmBvhExportScene()
+{
+   
+}
+
+function mmAddBvhProfile()
+{   
+   if (!isObject($mmSelectedShape))
+      return;
+         
+   if (strlen($Pref::BvhDir))
+      %openFileName = mmGetOpenFilename($Pref::BvhDir,"bvh");
+   else
+      %openFileName = mmGetOpenFilename($mmSelectedShape.getPath(),"bvh");
+   
+   %profileName = "test";//Whoops, need an add bvh profile form now, to get this
+   //as well as provide an option for supplying scale, etc. Try this to test 
+   //import function though.
+   
+   $mmSelectedShape.importBvhSkeleton(%openFileName,%profileName);
+       
+   return;
+}
+
+function mmDeleteBvhProfile()
+{
+   
+}
+
+function mmSelectBvhProfile()
+{
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   $mmBvhBvhNodeList.clear();
+   $mmBvhLinkedNodesList.clear();
+   
+   %profile_id = $mmBvhProfileList.getSelected();
+   if (%profile_id<=0)
+      return;
+      
+   %query = "SELECT id,name FROM bvhProfileNode WHERE profile_id=" @ %profile_id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   if (%resultSet)
+   {
+      while (!sqlite.endOfResult(%resultSet))
+      {
+         %id = sqlite.getColumn(%resultSet, "id");
+         %name = sqlite.getColumn(%resultSet, "name");            
+         $mmBvhBvhNodeList.add(%name,%id);
+         sqlite.nextRow(%resultSet);         
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+   
+   %query = "SELECT id FROM bvhProfileSkeleton WHERE profile_id=" @ %profile_id @ 
+   " AND skeleton_id=" @ $mmSelectedShape.skeletonID @ ";";
+   %resultSet = sqlite.query(%query,0);
+   %id = sqlite.getColumn(%resultSet, "id");
+   sqlite.clearResult(%resultSet);
+   
+   if (%id>0)
+   {      
+      %query = "SELECT id,bvhNodeName,skeletonNodeName FROM bvhProfileSkeletonNode " @ 
+               "WHERE bvhProfileSkeleton_id=" @ %id @ ";";
+      %resultSet = sqlite.query(%query,0);
+      while (!sqlite.endOfResult(%resultSet))
+      {
+         %id = sqlite.getColumn(%resultSet, "id");
+         %bvhName = sqlite.getColumn(%resultSet, "bvhNodeName");            
+         %skelName = sqlite.getColumn(%resultSet, "skeletonNodeName");   
+         %text = %skelName @ " - " @ %bvhName;         
+         $mmBvhLinkedNodesList.add(%text,%id);
+         sqlite.nextRow(%resultSet);
+      }
+      sqlite.clearResult(%resultSet);
+   }   
+}
+
+function mmBvhLinkNode()
+{
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %node_id = 0;
+   %skeleton_id = $mmSelectedShape.skeletonID;
+   if ((%skeleton_id<=0)||(numericTest(%skeleton_id)==false))
+      return;
+   
+   %query = "SELECT id FROM bvhProfileSkeleton WHERE profile_id=" @
+             $mmBvhProfileList.getSelected() @ " AND skeleton_id = " @ %skeleton_id @";";
+   %resultSet = sqlite.query(%query, 0); 
+   if (sqlite.numRows(%resultSet)==1)
+   {
+      %bvhProfileSkeleton_id = sqlite.getColumn(%resultSet, "id");
+      sqlite.clearResult(%resultSet);
+   }
+   else 
+   {
+      echo("ERROR: there are " @ sqlite.numRows(%resultSet) @ " bvhProfileSkeletons for bvh " @
+         $mmBvhProfileList.getSelected() @ " and skeleton " @ %skeleton_id @ ", should be one.");
+      sqlite.clearResult(%resultSet);      
+      return;
+   }
+   %query = "INSERT INTO bvhProfileSkeletonNode (bvhProfileSkeleton_id,bvhNodeName,skeletonNodeName) " @ 
+            "VALUES (" @ %bvhProfileSkeleton_id @ ",'" @ $mmBvhBvhNodeList.getText() @ "','" @
+             $mmBvhModelNodeList.getText() @ "');"; 
+   sqlite.query(%query, 0); 
+   echo("Inserted new bvhProfileNode! " @ $mmBvhBvhNodeList.getText());
+   /*
+   //Maybe do some error checking at some point, at least enough to remind them to delete existing
+   //links, if we don't do it automatically.
+   
+   %query = "SELECT id FROM bvhProfileSkeletonNode WHERE bvhProfileSkeleton_id=" @
+            %bvhProfileSkeleton_id @ " AND bvhNodeName = '" @ $mmBvhBvhNodeList.getText() @ "';";
+   %resultSet = sqlite.query(%query, 0); 
+   
+   %query = "UPDATE bvhProfileSkeletonNode SET skeletonNodeName='" @ 
+            $mmBvhModelNodeList.getText() @ "' WHERE bvhProfileSkeleton_id=" @ 
+            %bvhProfileSkeleton_id @ " AND bvhNodeName = '" @ 
+            $mmBvhBvhNodeList.getText() @ "';";
+   sqlite.query(%query, 0); 
+   */
+   
+   
+   //EcstasyToolsWindow::refreshBvhNodesList();
+}
+
+function mmBvhUnlinkNode()
+{
+   if (!isObject($mmSelectedShape))
+      return;
+      
+   %skeleton_id = $mmSelectedShape.skeletonID;
+   if ((%skeleton_id<=0)||(numericTest(%skeleton_id)==false))
+      return;
+   
+   %query = "SELECT id FROM bvhProfileSkeleton WHERE profile_id=" @
+             $mmBvhProfileList.getSelected() @ " AND skeleton_id = " @ %skeleton_id @";";
+   %resultSet = sqlite.query(%query, 0); 
+   if (sqlite.numRows(%result)==1)
+   {
+      %bvhProfileSkeleton_id = sqlite.getColumn(%result, "id");
+      sqlite.clearResult(%resultSet);
+   }
+   else 
+   {
+      echo("ERROR: there are " @ sqlite.numRows(%result) @ " bvhProfileSkeletons for bvh " @
+         $mmBvhProfileList.getSelected() @ " and skeleton " @ %skeleton_id @ 
+         ", should be one.");
+      return;
+   }
+
+   %query = "DELETE FROM bvhProfileSkeletonNode WHERE bvhProfileSkeleton_id=" @
+            %bvhProfileSkeleton_id @ " AND bvhNodeName='" @ $mmBvhBvhNodeList.getText() @
+            "' AND skeletonNodeName='" @ $mmBvhModelNodeList.getText() @ "';";
+   sqlite.query(%query,0);
+   
+   //EcstasyToolsWindow::refreshBvhNodesList();   
+}
+
+/*
+
+
+function EcstasyToolsWindow::unlinkBvhNode()
+{
+   //if(!EcstasyToolsWindow::StartSQL())
+      //return;
+   if (!$actor)
+      return;
+   %skeleton_id = $actor.getSkeletonId();
+   if (numericTest(%skeleton_id)==false) %skeleton_id = 0;
+   
+   %query = "SELECT id FROM bvhProfileSkeleton WHERE bvhProfile_id=" @
+             BvhImportProfilesList.getSelected() @ " AND skeleton_id = " @ %skeleton_id @";";
+   %result = sqlite.query(%query, 0); 
+   if (sqlite.numRows(%result)==1)
+      %bvhProfileSkeleton_id = sqlite.getColumn(%result, "id");
+      if (numericTest(%bvhProfileSkeleton_id)==false) %bvhProfileSkeleton_id = 0;
+   else 
+      echo("ERROR: there are " @ sqlite.numRows(%result) @ " bvhProfileSkeletons for bvh " @
+         BvhImportProfilesList.getSelected() @ " and skeleton " @ %skeleton_id @ 
+         ", should be one.");
+
+   %query = "UPDATE bvhProfileSkeletonNode SET skeletonNodeName='' " @ 
+            " WHERE bvhProfileSkeleton_id=" @ 
+            %bvhProfileSkeleton_id @ " AND bvhNodeName = '" @ 
+            BvhNodesList.getText() @ "';";
+   %result = sqlite.query(%query, 0); 
+   
+   sqlite.clearResult(%result);
+   //EcstasyToolsWindow::CloseSQL();
+   
+   EcstasyToolsWindow::refreshBvhNodesList();
+}
+*/
+
+function mmSelectBvhLinkedNode()
+{
+   %panel = $mmBvhTab.findObjectByInternalName("bvhPanel");
+   
+   %posRotAX = %panel.findObjectByInternalName("bvhPoseRotAX");
+   %posRotAY = %panel.findObjectByInternalName("bvhPoseRotAY");
+   %posRotAZ = %panel.findObjectByInternalName("bvhPoseRotAZ");
+   %posRotBX = %panel.findObjectByInternalName("bvhPoseRotBX");
+   %posRotBY = %panel.findObjectByInternalName("bvhPoseRotBY");
+   %posRotBZ = %panel.findObjectByInternalName("bvhPoseRotBZ");
+   %fixRotAX = %panel.findObjectByInternalName("bvhFixRotAX");
+   %fixRotAY = %panel.findObjectByInternalName("bvhFixRotAY");
+   %fixRotAZ = %panel.findObjectByInternalName("bvhFixRotAZ");
+   %fixRotBX = %panel.findObjectByInternalName("bvhFixRotBX");
+   %fixRotBY = %panel.findObjectByInternalName("bvhFixRotBY");
+   %fixRotBZ = %panel.findObjectByInternalName("bvhFixRotBZ");
+   
+   %id = $mmBvhLinkedNodesList.getSelected();
+   
+   %query = "SELECT * FROM bvhProfileSkeletonNode WHERE id=" @ %id @ ";";
+   %resultSet = sqlite.query(%query,0);
+   if (sqlite.numRows(%resultSet)==1)
+   {
+      %posRotAX.setText(sqlite.getColumn(%resultSet, "poseRotA_x"));
+      %posRotAY.setText(sqlite.getColumn(%resultSet, "poseRotA_y"));
+      %posRotAZ.setText(sqlite.getColumn(%resultSet, "poseRotA_z"));
+      %posRotBX.setText(sqlite.getColumn(%resultSet, "poseRotB_x"));
+      %posRotBY.setText(sqlite.getColumn(%resultSet, "poseRotB_y"));
+      %posRotBZ.setText(sqlite.getColumn(%resultSet, "poseRotB_z"));
+      %fixRotAX.setText(sqlite.getColumn(%resultSet, "fixRotA_x"));
+      %fixRotAY.setText(sqlite.getColumn(%resultSet, "fixRotA_y"));
+      %fixRotAZ.setText(sqlite.getColumn(%resultSet, "fixRotA_z"));
+      %fixRotBX.setText(sqlite.getColumn(%resultSet, "fixRotB_x"));
+      %fixRotBY.setText(sqlite.getColumn(%resultSet, "fixRotB_y"));
+      %fixRotBZ.setText(sqlite.getColumn(%resultSet, "fixRotB_z"));
+   }
+   sqlite.clearResult(%resultSet);
+   
+   
+   
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -2021,10 +3092,12 @@ function setupMegaMotionSequenceWindow()
    
    $mmSequenceInFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceInFrame");
    $mmSequenceOutFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceOutFrame");
+   $mmSequenceFindLoopDelta = MegaMotionSequenceWindow.findObjectByInternalName("sequenceFindLoopDelta");
    
    $mmSequenceInFrame.setText("0");
    $mmSequenceOutFrame.setText("1");
-
+   $mmSequenceFindLoopDelta.setText("0");
+   
    $mmSequenceFrame = MegaMotionSequenceWindow.findObjectByInternalName("sequenceFrame");
    $mmSequenceInFrame.setText("0");
 }
@@ -2035,6 +3108,9 @@ function mmSequenceSetInBar()
    
    %frame = $mmSequenceSlider.value;
    %frame = mFloor(%frame);
+   
+   $mmSelectedShape.getClientObject().recordCropStartPositions();//Used for loop detecting.
+   
    %numFrames = $mmSequenceSlider.range.y;
    %newPos = $mmSequenceSlider.getPosition();
    %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);//Slider can't go to end.
@@ -2194,7 +3270,6 @@ function mmSequenceSliderClick()
    %value = $mmSequenceSlider.value; 
    %newPos = %value / $mmSequenceSlider.range.y;   
    $mmSelectedShape.setSeqPos(%newPos); 
-   
 }
 
 function mmSequenceSliderDrag()
@@ -2203,28 +3278,129 @@ function mmSequenceSliderDrag()
       
    %value = $mmSequenceSlider.value; 
    %newPos = %value / $mmSequenceSlider.range.y;   
-   echo("slider drag! value " @ %value @ " newpos " @ %newPos);
    $mmSelectedShape.setSeqPos(%newPos); 
 }
 
-
-
+function mmRefreshSequenceList()
+{
+   $mmSequenceList.clear();
+   %numSeqs = $mmSelectedShape.getNumSeqs();
+   for (%j=0;%j<%numSeqs;%j++)
+   {
+      %name = $mmSelectedShape.getSeqName(%j);
+      $mmSequenceList.add(%name,%j);         
+   }
+}
 
 function mmCrop()
 {
+   if (!isObject($mmSelectedShape))
+      return;
+
+   if (strlen($Pref::DsqDir))
+      %saveFileName = mmGetSaveFileName($Pref::DsqDir,"dsq");
+   else
+      %saveFileName = mmGetSaveFileName($actor.getPath(),"dsq");
+
+   %crop_start = $mmSequenceInFrame.getText()/$mmSequenceSlider.range.y;
+   %crop_stop = $mmSequenceOutFrame.getText()/$mmSequenceSlider.range.y;
+  
+   //HERE: crop from crop_start to crop_stop, into a new sequence, append it to list.
+   %seqnum = $mmSelectedShape.getSeqNum($mmSequenceList.getText());
    
+   $mmSelectedShape.cropSequence(%seqnum,%crop_start,%crop_stop ,%saveFileName);
+ 
+   $mmSelectedShape.dropSequence($mmSelectedShape.getNumSeqs()-1);   
+   $mmSelectedShape.loadSequence(%saveFileName);//maybe?
+   
+   //$mmSequenceSliderIn.setPosition();//Need a function for these, isolate the logic.
+   //$mmSequenceSliderOut.setPosition();
+   
+   mmRefreshSequenceList();
+   
+   //$mmSequenceList.setSelected($mmSequenceList.size()-1);
+   //EcstasyToolsWindow::selectSequence();
 }
 
 function mmFindLoop()
 {
-   
+   $mmRotDeltaSumMin = 999.0;
+   $mmRotDeltaSumDescending = 0;
+   $mmRotDeltaSumLast = 0;
+   $mmLoopDetecting = 1;
+   EcstasySequenceSlider.paused = false;
+   $mmSelectedShape.forwardSeq();
+   echo("Find Loop! deltaSumMin " @ $mmRotDeltaSumMin);
+   //$actor.startAnimatingAtPos(SequencesList.getText(),EcstasySequenceSlider.value);
 }
 
 function mmSmoothLoop()
 {
+   if (!isObject($mmSelectedShape))
+      return;
    
+   %seq = $mmSequenceList.getSelected();
+   $mmSelectedShape.smoothLoopTransition(%seq,$mmLoopDetectorSmooth);
 }
 
+////////////////////////////////////////////////////
+function mmGetOpenFileName(%defaultFilePath,%type)
+{
+   if (%type$="dts")
+      %filter = "DTS Files (*.dts)|*.dts|Collada Files (*.dae)|*.dae|FBX Files (*.fbx)|*.fbx|All Files (*.*)|*.*|";
+   else if (%type$="dsq")
+      %filter = "DSQ Files (*.dsq)|*.dsq|All Files (*.*)|*.*|";
+   else if (%type$="bvh")
+      %filter = "BVH Files (*.bvh)|*.bvh|All Files (*.*)|*.*|";    
+   //else if ...
+      
+   %dlg = new OpenFileDialog()
+   {
+      Filters        = %filter;
+      DefaultPath    = %defaultFileName;
+      //DefaultFile    = %defaultFileName;
+      ChangePath     = false;
+      MustExist      = true;
+   };
+   if(%dlg.Execute())
+   {
+      $Pref::DsqDir = filePath( %dlg.FileName );
+      %filename = %dlg.FileName;      
+      %dlg.delete();
+      return %filename;
+   }
+   %dlg.delete();
+   return "";      
+}
+
+function mmGetSaveFileName(%defaultFilePath,%type)
+{
+   if (%type$="dts")
+      %filter = "DTS Files (*.dts)|*.dts|All Files (*.*)|*.*|";
+   else if (%type$="dsq")
+      %filter = "DSQ Files (*.dsq)|*.dsq|All Files (*.*)|*.*|";
+   else if (%type$="bvh")
+      %filter = "BVH Files (*.bvh)|*.bvh|All Files (*.*)|*.*|";
+   //else if ...
+      
+   %dlg = new SaveFileDialog()
+   {
+      Filters        = %filter;
+      DefaultPath    = %defaultFilePath;
+      ChangePath     = false;
+      OverwritePrompt   = true;
+   };
+   if(%dlg.Execute())
+   {
+      $Pref::DsqDir = filePath( %dlg.FileName );
+      %filename = %dlg.FileName;      
+      %dlg.delete();
+      return %filename;
+   }
+   %dlg.delete();
+   return "";   
+   
+}
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -2234,7 +3410,7 @@ function MegaMotionTick()
    //General function for anything in MegaMotion that needs a tick but doesn't do it itself.
    
    //Sequence slider needs to keep up with selected shape's animation:
-   if (($mmSelectedShape)&&($mmSequenceSlider)&&(MegaMotionSequenceWindow.isVisible()))
+   if ((isObject($mmSelectedShape))&&($mmSequenceSlider)&&(MegaMotionSequenceWindow.isVisible()))
    {
       %threadPos = $mmSelectedShape.getSeqPos();
       %range = $mmSequenceSlider.range;
@@ -2243,6 +3419,66 @@ function MegaMotionTick()
       %frame = mRound(%frame * 100)/100;//(I don't think we have a "round to n decimals" in torque script yet?)
       $mmSequenceSlider.setValue(%frame);      
       $mmSequenceFrame.setText(%frame);
+      
+      if ($mmLoopDetecting)
+      {
+         //TimelineRotDeltaSum.visible = 1;
+         //cropStopCyclicButton.visible = 1;
+         %seq = $mmSequenceList.getSelected();
+         %current_frame = mFloor(%threadpos * $mmSequenceSlider.range.y);
+         %start_frame = $mmSequenceInFrame.getText();
+         //if (%start_frame==%current_frame)    
+         //{//Somehow these starting values are getting lost between mmFindLoop and here. (??)
+         //   $mmRotDeltaSumMin = 999.0;
+         //   $mmRotDeltaSumDescending = 0;
+         //   $mmRotDeltaSumLast = 0;
+         //}
+         
+         %seqDeltaSum = $mmSelectedShape.getClientObject().getSeqDeltaSum(%seq,%current_frame,%start_frame);
+         $mmSequenceFindLoopDelta.setText(%seqDeltaSum);
+         //TimelineRotDeltaSum.setText(mFloatLength(%seqDeltaSum,3));
+         %frame_from_start = %current_frame-%start_frame;
+         echo(" frame: " @ %current_frame @ ", deltaSum " @ %seqDeltaSum @ "  last " @ $mmRotDeltaSumLast @ 
+            ", deltaSumMin " @ $mmRotDeltaSumMin @ " isDescending " @ $mmRotDeltaSumDescending);
+         if ((%seqDeltaSum < $mmRotDeltaSumLast)&&(%frame_from_start > $mmLoopDetectorDelay))
+            $mmRotDeltaSumDescending = 1;
+         else 
+         {
+            if ($mmRotDeltaSumDescending)
+            {
+               if ($mmRotDeltaSumLast < $mmRotDeltaSumMin)
+               {
+                  echo("loop detector found out pos: " @ %current_frame @ " frame-from-start " @ %frame_from_start );
+                  $mmRotDeltaSumMin = $mmRotDeltaSumLast;
+                  $mmRotDeltaSumLastFrame = %current_frame-1;                  
+                  //SequencesCropStopKeyframeText.setText($rotDeltaSumLastFrame);
+                  %markOutPos = mFloatLength($mmRotDeltaSumLastFrame / $mmSelectedShape.getSeqFrames(%seq),3);
+                  $mmSequenceOutFrame.setText(%markOutPos);
+                  $mmSequenceSlider.setValue($mmRotDeltaSumLastFrame);
+                  mmSequenceSetOutBar();
+                  echo("found a minimum: " @ $mmRotDeltaSumMin @ ", frame " @ $mmRotDeltaSumLastFrame);
+               }
+               $mmRotDeltaSumDescending = 0;
+            }
+         }
+         $mmRotDeltaSumLast = %seqDeltaSum;
+         if (((%current_frame==0)&&($mmRotDeltaSumMin<999.0))||(%frame_from_start > $mmLoopDetectorMax))
+         {
+            echo("ending loop detection: current frame " @ %current_frame @ " frame-from-start " @ %frame_from_start @ 
+               ", loop detector max: " @ $loopDetectorMax);
+            //SequencesCropStopKeyframeText.setText($rotDeltaSumLastFrame);
+            %markOutPos = mFloatLength($mmRotDeltaSumLastFrame / $mmSelectedShape.getSeqFrames(%seq),3);
+            //SequencesCropStopText.setText(%markOutPos);
+            //$crop_stop = %markOutPos;//Note: this sucks, we should just check SequencesCropStopText.getText instead.
+            //TimelineRotDeltaSum.setText(mFloatLength($rotDeltaSumMin,3));
+            $mmSequenceOutFrame.setText(%markOutPos);            
+            $mmLoopDetecting = 0;
+            $mmSequenceSlider.setValue($mmSequenceOutFrame.getText());
+            mmSequenceSetOutBar();
+            //EcstasySequenceSlider::setSliderToPos(SequencesCropStartText.getText());
+            //$showRotDeltaSum = 0;
+         }          
+      }
    }
    
    schedule(30,0,"MegaMotionTick");//30 MS =~ 32 times per second.
@@ -2342,6 +3578,7 @@ function shapesAct()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //For each form that we hook up to a top menu, give it an "expose" function to load it and call setup for it.
 //OBSOLETE, TESTING /////////////////////////////
+/*
 function exposeMegaMotion()
 {
    if (isDefined("MegaMotionWindow"))
@@ -2363,8 +3600,7 @@ function setupMegaMotionForm()
    %sceneSetList.add("Portlingrad","2");
    %sceneSetList.setSelected(1);
 }
-
-
+*/
 
 
 //function testSpatialite()
