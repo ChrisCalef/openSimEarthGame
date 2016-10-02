@@ -23,11 +23,9 @@
 //--- cube.dae MATERIALS BEGIN ---
 singleton Material(cube_GridMaterial)
 {
-	mapTo = "GridMaterial";
+	mapTo = "unmapped_mat";
 
-	diffuseMap[0] = "grid";
-	normalMap[0] = "";
-	specularMap[0] = "";
+	diffuseMap[0] = "art/shapes/cube/grid";
 
 	diffuseColor[0] = "1 1 1 1";
 	specular[0] = "0.9 0.9 0.9 1";
@@ -42,3 +40,34 @@ singleton Material(cube_GridMaterial)
 
 //--- cube.dae MATERIALS END ---
 
+
+singleton Material(_3td_Crate01_Crate02)
+{
+   mapTo = "unmapped_mat";
+   diffuseMap[0] = "art/shapes/3TD/Industrial/3td_Crate_01/3td_Crate_02.png";
+   normalMap[0] = "art/shapes/3TD/Industrial/3td_Crate_01/3td_Crate_02_NRM.png";
+   specular[0] = "0.9 0.9 0.9 1";
+   specularPower[0] = "10";
+   useAnisotropic[0] = "1";
+   doubleSided = "1";
+   translucentBlendOp = "None";
+};
+
+singleton Material(Warf_01_WarfWood)
+{
+   mapTo = "unmapped_mat";
+   diffuseMap[0] = "art/shapes/FreeHarborProps/Warf_01/3td_MossWood_04";
+   normalMap[0] = "art/shapes/FreeHarborProps/Warf_01/3td_MossWood_04_NRM.png";
+   specular[0] = "0.9 0.9 0.9 1";
+   specularPower[0] = "50";
+   pixelSpecular[0] = "1";
+   useAnisotropic[0] = "1";
+   translucentBlendOp = "None";
+};
+
+singleton Material(skyscraper_Concrete_Block_8x8_Gray)
+{
+   mapTo = "GridMaterial";
+   diffuseMap[0] = "art/shapes/sketchup/skyscraper/Concrete_Block_8x8_Gray";
+   translucentBlendOp = "None";
+};

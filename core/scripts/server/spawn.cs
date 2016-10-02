@@ -287,7 +287,7 @@ function GameConnection::spawnPlayer(%this, %spawnPoint, %noControl)
       // Treat %spawnPoint as a transform
       %player.setTransform(%spawnPoint);
    }
-
+   
    // If we didn't actually create a player object then bail
    if (!isObject(%player))
    {

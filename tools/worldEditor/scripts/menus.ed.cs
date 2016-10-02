@@ -260,9 +260,9 @@ function EditorGui::buildMenus(%this)
 
       barTitle = "Forms";
          
-      item[0] = "Database Forms GUI" TAB "" TAB "exposeUIFormWindow();";
-      item[1] = "MegaMotion" TAB "" TAB "exposeMegaMotionScenesForm();";
-      item[2] = "openSimEarth" TAB "" TAB "exposeOpenSimEarthForm();";
+      item[0] = "MegaMotion" TAB "" TAB "exposeMegaMotionScenesForm();";
+      item[1] = "UI Manager" TAB "" TAB "exposeUIFormWindow();";
+      //item[2] = "openSimEarth" TAB "" TAB "exposeOpenSimEarthForm();";
    };
    %this.menuBar.insert(%uiFormsMenu, %this.menuBar.getCount());
 

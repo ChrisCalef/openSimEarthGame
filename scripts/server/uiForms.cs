@@ -1395,7 +1395,10 @@ function makeSqlGuiForm(%form_id)
          
          if (%type !$= "Virtual")
          {  
-            %script = %script @ %indent @ "new " @ %type @ "() {\n";
+            %title = "";
+            if (%type $= "GuiTabBookCtrl")
+               %title = %name;
+            %script = %script @ %indent @ "new " @ %type @ "(" @ %title @ ") {\n";
             %script = %script @ %indent @ "   position = \"" @ mFloor(%pos_x) @ " " @ mFloor(%pos_y) @ "\";\n";
             %script = %script @ %indent @ "   extent = \"" @ %width @ " " @ %height @ "\";\n";
             %script = %script @ %indent @ "   text = \"" @ %content @ "\";\n";

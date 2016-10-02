@@ -22,7 +22,7 @@
 
 singleton Material( BlankWhite )
 {
-   diffuseMap[0] = "core/art/white";
+   diffuseMap[0] = "art/terrains/Example/grass1_dry.jpg";
    mapTo = "white";
    materialTag0 = "Miscellaneous";
 };

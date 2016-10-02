@@ -11,17 +11,6 @@ singleton Material(Warf_01_WarfTop)
    useAnisotropic[0] = "1";
 };
 
-singleton Material(Warf_01_WarfWood)
-{
-   mapTo = "WarfWood";
-   diffuseMap[0] = "3td_MossWood_04";
-   specular[0] = "0.9 0.9 0.9 1";
-   specularPower[0] = "50";
-   translucentBlendOp = "None";
-   normalMap[0] = "3td_MossWood_04_NRM.png";
-   pixelSpecular[0] = "1";
-   useAnisotropic[0] = "1";
-};
 
 singleton Material(Warf_01_WarfSides)
 {

@@ -31,7 +31,7 @@ new Root(openSteerTree) {
             canSaveDynamicFields = "1";      
             
             new ScriptEval() {
-               behaviorScript = "%obj.targetType=\"Player\";";//Health
+               behaviorScript = "%obj.targetType=\"Player\";";
                defaultReturnStatus = "SUCCESS";
                canSave = "1";
                canSaveDynamicFields = "1";

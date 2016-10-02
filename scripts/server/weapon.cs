@@ -253,9 +253,9 @@ function WeaponImage::onFire(%this, %obj, %slot)
          
          //TEMP! Define this in the (weapon or the projectile datablock)?
          if (%this.getName() $= "RyderWeaponImage")
-            %weaponForce = 70.0;
+            %weaponForce = 0.01;
          else
-            %weaponForce = 95.0;
+            %weaponForce = 0.02;
             
          //echo("casting ray from: " @ %start @ " in direction of " @ %vec);
          %id = physx3CastRay(%start,%vec,1);//0=static,1=dynamic,2=player,3=all

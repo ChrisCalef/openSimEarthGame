@@ -36,8 +36,8 @@ new SimGroup(MissionGroup) {
       fogScale = "1 1 1 1";
       exposure = "0.85";
       zOffset = "0";
-      azimuth = "84";
-      elevation = "54";
+      azimuth = "155";
+      elevation = "34";
       moonAzimuth = "0";
       moonElevation = "45";
       castShadows = "1";
@@ -88,7 +88,7 @@ new SimGroup(MissionGroup) {
          outdoorWeight = "1";
          isAIControlled = "0";
          dataBlock = "SpawnSphereMarker";
-         position = "0 0 15";
+         position = "0 0 5";
          rotation = "1 0 0 0";
          scale = "1 1 1";
          canSave = "1";

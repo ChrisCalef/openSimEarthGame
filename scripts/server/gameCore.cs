@@ -807,7 +807,6 @@ function GameCore::spawnPlayer(%game, %client, %spawnPoint, %noControl)
          // Pick a location within the spawn sphere.
          %spawnLocation = GameCore::pickPointInSpawnSphere(%player, %spawnPoint);
          %player.setTransform(%spawnLocation);
-         
       }
       else
       {

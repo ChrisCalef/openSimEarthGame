@@ -2271,3 +2271,21 @@ function MaterialEditorGui::updateAccuCheckbox(%this, %value)
    MaterialEditorGui.updateActiveMaterial("accuEnabled[" @ MaterialEditorGui.currentLayer @ "]", %value);   
    MaterialEditorGui.guiSync( materialEd_previewMaterial );
 }
+
+singleton Material(Muscular_male_Short04_Short04_mat)
+{
+   mapTo = "unmapped_mat";
+   diffuseMap[0] = "Muscular_male_Short04_Short04";
+};
+
+singleton Material(Muscular_male_Shoes01_Shoes01_mat)
+{
+   mapTo = "unmapped_mat";
+   diffuseMap[0] = "Muscular_male_Shoes01_Shoes01";
+};
+
+singleton Material(Muscular_male_Male_casualsuit06_Male_casualsuit06_mat)
+{
+   mapTo = "unmapped_mat";
+   diffuseMap[0] = "Muscular_male_Male_casualsuit06_Male_casualsuit06";
+};

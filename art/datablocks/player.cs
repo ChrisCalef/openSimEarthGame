@@ -507,7 +507,7 @@ datablock PlayerData(DefaultPlayerData)
    throwForce = 30;
 
    minLookAngle = "-1.4";
-   maxLookAngle = "0.9";
+   maxLookAngle = "1.4";
    maxFreelookAngle = 3.0;
 
    mass = 120;

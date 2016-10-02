@@ -43,7 +43,6 @@ function PhysicsShape::onStartup(%this)
       
       %this.groundMove();
       
-      
       echo("starting up a M4 physics shape!");      
    } 
    else if (%this.dataBlock $= "bo105Physics") //useDataSource: holding off on this for now.
@@ -61,8 +60,9 @@ function PhysicsShape::onStartup(%this)
    else if (%this.dataBlock $= "ka50Physics") 
    { 
       %this.setName("ka50");
-      //%this.schedule(500,"setUseDataSource",true);
-      %this.schedule(500,"showRotorBlades");
+      %this.schedule(1900,"setUseDataSource",true);
+      %this.schedule(2000,"showRotorBlades");
+      %this.schedule(2010,"echo('SETTING ROTOR BLADES!!!!!!!!!!!!!!!!!!!!!');");
       //%this.showNodes();   
    }
 }
@@ -122,4 +122,112 @@ function PhysicsShape::moveTo(%this, %dest, %slowDown)
 function PhysicsShape::say(%this, %message)//Testing, does this only work for AIPlayers?
 {
    chatMessageAll(%this, '\c3%1: %2', %this.getid(), %message);  
+}
+
+
+////////////////////////////////////////////////////
+
+function PhysicsShape::relaxNeck(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("neck"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("head"),true);   
+}
+
+function PhysicsShape::relaxTorso(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("abdomen"),true); 
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("chest"),true); 
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("neck"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("head"),true);   
+}
+
+function PhysicsShape::relaxAll(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("abdomen"),true); 
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("chest"),true); 
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("neck"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("head"),true);  
+    
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rHand"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rForeArm"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rShldr"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rCollar"),true); 
+   
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lHand"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lForeArm"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lShldr"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lCollar"),true); 
+   
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rFoot"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rShin"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rThigh"),true); 
+   
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lFoot"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lShin"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lThigh"),true);  
+}
+
+function PhysicsShape::relaxRightArm(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rHand"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rForeArm"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rShldr"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rCollar"),true);  
+}
+
+function PhysicsShape::relaxLeftArm(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lHand"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lForeArm"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lShldr"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lCollar"),true);  
+}
+
+function PhysicsShape::relaxRightLeg(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rFoot"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rShin"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("rThigh"),true);   
+}
+
+function PhysicsShape::relaxLeftLeg(%this)
+{
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;
+      
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lFoot"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lShin"),true);  
+   %clientShape.setPartDynamic(%clientShape.getBodyNum("lThigh"),true);  
 }
