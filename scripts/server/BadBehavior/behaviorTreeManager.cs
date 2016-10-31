@@ -66,13 +66,18 @@ function BehaviorTreeManager::loadTrees(%this)
    
    %pattern = "./BehaviorTrees/*.cs";   
    %file = findFirstFile( %pattern );
-   if ( %file $= "" )
-   {
-      // Try for DSOs next.
-      %pattern = "./BehaviorTrees/*.cs.dso";
-      %file = findFirstFile( %pattern );
-   }
    
+   while( %file !$= "" )
+   {      
+      exec( %file );
+      %file = findNextFile( %pattern );
+   }  
+   
+   /////MegaMotion - adding our own directory in here.
+   
+   %pattern = "./BehaviorTrees/MegaMotion/*.cs";   
+   %file = findFirstFile( %pattern );
+
    while( %file !$= "" )
    {      
       exec( %file );
@@ -120,12 +125,13 @@ function SimObject::setBehavior(%this, %tree, %frequency)
    if(isObject(%this.behaviorTree))
       %this.behaviorTree.rootNode = %tree;
    else      
+   {
       %this.behaviorTree = BehaviorTreeManager.createTree(%this, %tree);
+   }
 
    if(%frequency)   
       %this.behaviorTree.frequency = %frequency;
 }
-
 
 // stop running a behavior tree on an object
 function SimObject::clearBehavior(%this)

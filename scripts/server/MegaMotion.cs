@@ -48,12 +48,58 @@ $mmDebugRenderCollisions = 1;
 $mmDebugRenderJointLimits = 0;
 $mmDebugRenderBodyAxes = 0;
 
+//Some of above should just be prefs, others should be local.
+
+
+/*
+
+//AND, for tomorrow: EWorldEditor.getSelectionSize(), %obj = EWorldEditor.getSelectedObject( %i ).
+//Multi-select, for the masses of sceneShapes. Wherever applicable, make it so.
+
+function EcstasyToolsWindow::toggleGroundAnimate()
+{
+   if (EWorldEditor.getSelectionSize()>0)
+   {
+      for (%i=0;%i<EWorldEditor.getSelectionSize();%i++)
+      {
+         %obj = EWorldEditor.getSelectedObject( %i );
+         if (%obj)
+         {
+           if (%obj.getClassName() $= "fxFlexBody")
+           {
+              //echo("playing sequence " @ SequencesList.getText() @ " on actor " @ %obj.gatActorID());
+               %ghostID = LocalClientConnection.getGhostID(%obj);
+               %client_bot = ServerConnection.resolveGhostID(%ghostID);
+               %client_bot.setGroundAnimating($tweaker_ground_animate);           
+           }
+         }
+      }
+   } 
+   else if ($actor) 
+   {
+      $actor.setGroundAnimating($tweaker_ground_animate);
+   }
+}
+*/
+
 function mmTabBook::onTabSelected(%this, %text, %index)
 {
    echo("selecting tab!  " @ %text @ " index " @ %index);  
    
    if (%index == 0) // physics tab
-      physicsDebugDraw(1);
+   {
+      //Have to be extra careful with debug draw, needs rewrite. Terrain crashes it, too much data(?)
+      %haveTerrain = 0;
+      for (%i=0;%i<MissionGroup.getCount();%i++)
+      {
+         if (MissionGroup.getObject(%i).getClassName() $= "TerrainBlock")
+            %haveTerrain = 1;
+      }
+      if (!%haveTerrain)
+         physicsDebugDraw(1);
+      else
+         physicsDebugDraw(0);
+   }
    else
       physicsDebugDraw(0);
       
@@ -61,6 +107,11 @@ function mmTabBook::onTabSelected(%this, %text, %index)
       MegaMotionSequenceWindow.visible = true;
    else
       MegaMotionSequenceWindow.visible = false;
+      
+   if (%index == 3)// ai tab
+      $Nav::Editor::renderMesh = true;
+   else
+      $Nav::Editor::renderMesh = false;
 }
 
 function mmToggleDebugRenderCollisions()
@@ -185,6 +236,8 @@ function setupMegaMotionScenesForm()
    mmSetupAiTab();
    
    mmRefreshShapeLists();
+   
+   //mmLoadOpenSteerProfiles();//Trying to avoid querying openSteer table for every bot, but screw it for now.
 }
 
 function mmSetupSceneShapeTab()
@@ -262,60 +315,6 @@ function mmSetupPhysicsTab()
       sqlite.clearResult(%resultSet);
    }
    
-   
-   //behaviorList
-   //Whoops, getting rid of the list for now, changing back to a text edit.
-   
-   //groupList
-   %query = "SELECT id,name FROM shapeGroup ORDER BY name;";
-   %resultSet = sqlite.query(%query, 0);
-   if (%resultSet)
-   {
-      if (sqlite.numRows(%resultSet)>0)
-      {         
-         //%firstID = sqlite.getColumn(%resultSet, "id");
-         $mmShapeGroupList.add("",0);  
-         while (!sqlite.endOfResult(%resultSet))
-         {
-            %id = sqlite.getColumn(%resultSet, "id");
-            %name = sqlite.getColumn(%resultSet, "name");
-            
-            $mmShapeGroupList.add(%name,%id);
-            sqlite.nextRow(%resultSet);         
-         }
-         //if (%firstID>0) 
-            //$mmShapeList.setSelected(%firstID);
-      }
-      sqlite.clearResult(%resultSet);
-   }
-   
-   %query = "SELECT id,name FROM openSteerProfile ORDER BY name;";
-   %resultSet = sqlite.query(%query, 0);
-
-   %id = "0";
-   %name = "None";
-   $mmOpenSteerList.add(%name @ "   " @ %id,%id);
-
-   if (%resultSet)
-   {
-      if (sqlite.numRows(%resultSet)>0)
-      {         
-         //%firstID = sqlite.getColumn(%resultSet, "id");
-         $mmOpenSteerList.add("",0);  
-         while (!sqlite.endOfResult(%resultSet))
-         {
-            %id = sqlite.getColumn(%resultSet, "id");
-            %name = sqlite.getColumn(%resultSet, "name");
-            
-            $mmOpenSteerList.add(%name @ "   " @ %id,%id);
-            sqlite.nextRow(%resultSet);         
-         }
-         //if (%firstID>0) 
-            //$mmShapeList.setSelected(%firstID);
-      }
-      sqlite.clearResult(%resultSet);
-   }   
-   
    %query = "SELECT id,name FROM px3Joint ORDER BY name;";  
    %resultSet = sqlite.query(%query, 0); 
    if (%resultSet)
@@ -371,6 +370,8 @@ function mmSetupSequenceTab()
    $mmSequenceKeyframeTypeText = %panel.findObjectByInternalName("sequenceKeyframeTypeText");
    $mmSequenceKeyframeTypeLabel.setVisible(false);//For now, skip this detail.
    
+   $mmSceneAutoplay = false;
+
    //These are currently unused and may never be useful, but for now just hiding them.
    //%addKeyframeSeriesButton = %panel.findObjectByInternalName("addKeyframeSeriesButton");
    //%addKeyframeSeriesButton.setVisible(false);
@@ -452,9 +453,73 @@ function mmSetupAiTab()
    %panel = $mmAiTab.findObjectByInternalName("aiPanel");
    
    //Can we reduce the number of globals here, by defining them temporarily where needed?
-   $mmSceneShapeBehaviorTree = %panel.findObjectByInternalName("sceneShapeBehaviorTree");//AiBehaviorTree
+   //$mmSceneShapeBehaviorTree = %panel.findObjectByInternalName("sceneShapeBehaviorTree");//AiBehaviorTree
+   $mmSceneShapeBehaviorTreeList = %panel.findObjectByInternalName("sceneShapeBehaviorTreeList");
    $mmShapeGroupList = %panel.findObjectByInternalName("sceneShapeGroupList");//RENAME: AiGroupList   
    $mmOpenSteerList = %panel.findObjectByInternalName("sceneShapeOpenSteerList");//AiOpenSteerList
+   $mmSceneAutoplay = $pref::MegaMotion::SceneAutoplay;
+   
+   $mmSceneShapeBehaviorTreeList.add("",0);
+   for (%i=0;%i<BehaviorTreeGroup.getCount();%i++)
+   {
+      %name = BehaviorTreeGroup.getObject(%i).getName();
+      $mmSceneShapeBehaviorTreeList.add(%name,%i+1);//Can't start with zero, because that is blank line.
+   }
+   
+   //behaviorList
+   //Whoops, getting rid of the list for now, changing back to a text edit.
+   
+   //groupList
+   $mmShapeGroupList.clear();
+   %query = "SELECT id,name FROM shapeGroup ORDER BY name;";
+   %resultSet = sqlite.query(%query, 0);
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {         
+         //%firstID = sqlite.getColumn(%resultSet, "id");
+         $mmShapeGroupList.add("",0);  
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %name = sqlite.getColumn(%resultSet, "name");
+            
+            $mmShapeGroupList.add(%name,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         //if (%firstID>0) 
+            //$mmShapeList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }
+   
+   %query = "SELECT id,name FROM openSteerProfile ORDER BY name;";
+   %resultSet = sqlite.query(%query, 0);
+
+   %id = "0";
+   %name = "None";
+   $mmOpenSteerList.add(%name @ "   " @ %id,%id);
+
+   if (%resultSet)
+   {
+      if (sqlite.numRows(%resultSet)>0)
+      {         
+         //%firstID = sqlite.getColumn(%resultSet, "id");
+         $mmOpenSteerList.add("",0);  
+         while (!sqlite.endOfResult(%resultSet))
+         {
+            %id = sqlite.getColumn(%resultSet, "id");
+            %name = sqlite.getColumn(%resultSet, "name");
+            
+            $mmOpenSteerList.add(%name @ "   " @ %id,%id);
+            sqlite.nextRow(%resultSet);         
+         }
+         //if (%firstID>0) 
+            //$mmShapeList.setSelected(%firstID);
+      }
+      sqlite.clearResult(%resultSet);
+   }
+   
 }
 
 function mmRefreshShapeLists()
@@ -482,7 +547,33 @@ function mmRefreshShapeLists()
       }
       sqlite.clearResult(%resultSet);
    }   
-   
+}
+
+function mmLoadOpenSteerProfiles()  //NOPE!!! Using an array like this does not work, apparently.
+{  //Now, this is surely better than querying the database each time, but now we're adding twelve
+   //new global variables for every new openSteerProfile, which is hardly optimal either. Might want
+   //to create a new object type in the engine and set its values here instead.
+   %query = "SELECT * FROM openSteerProfile ORDER BY id;";
+   %resultSet = sqlite.query(%query, 0);
+   while (!sqlite.endOfResult(%resultSet))
+   {
+      %id = sqlite.getColumn(%resultSet, "id");
+      %maxForce = sqlite.getColumn(%resultSet,"maxForce");
+      $openSteerProfile[%id].mass = sqlite.getColumn(%resultSet,"mass");
+      $openSteerProfile[%id].radius = sqlite.getColumn(%resultSet,"radius");
+      $openSteerProfile[%id].maxForce = sqlite.getColumn(%resultSet,"maxForce");
+      $openSteerProfile[%id].maxSpeed = sqlite.getColumn(%resultSet,"maxSpeed");
+      $openSteerProfile[%id].wanderChance = sqlite.getColumn(%resultSet,"wanderChance");
+      $openSteerProfile[%id].wanderWeight = sqlite.getColumn(%resultSet,"wanderWeight");
+      $openSteerProfile[%id].seekTargetWeight = sqlite.getColumn(%resultSet,"seekTargetWeight");
+      $openSteerProfile[%id].avoidTargetWeight = sqlite.getColumn(%resultSet,"avoidTargetWeight");
+      $openSteerProfile[%id].seekNeighborWeight = sqlite.getColumn(%resultSet,"seekNeighborWeight");
+      $openSteerProfile[%id].avoidNeighborWeight = sqlite.getColumn(%resultSet,"avoidNeighborWeight");
+      $openSteerProfile[%id].avoidNavMeshEdgeWeight = sqlite.getColumn(%resultSet,"avoidNavMeshEdgeWeight");
+      $openSteerProfile[%id].detectNavMeshEdgeRange = sqlite.getColumn(%resultSet,"detectNavMeshEdgeRange");      
+      echo("setting up opensteer profile " @ %id @ ", maxForce " @ %maxForce);
+      sqlite.nextRow(%resultSet);       
+   }
 }
 
 //////////////////////////////////////////////////
@@ -794,7 +885,7 @@ function mmUpdateAiTab()
       sqlite.query(%query, 0); 
    }
    
-   %behavior_tree = $mmSceneShapeBehaviorTree.getText();
+   %behavior_tree = $mmSceneShapeBehaviorTreeList.getText();
    //echo("trying to change behavior tree from " @ $mmSceneShapeBehaviorTreeOrig @ " to " @ %behavior_tree @ "!!!!!!!!!!!!!!!!");
    if ((strlen(%behavior_tree)>0) && (%behavior_tree!$="NULL") &&
             (%behavior_tree!$=$mmSceneShapeBehaviorTreeOrig))
@@ -846,7 +937,43 @@ function mmUpdateAiTab()
 
 ////////////////////////////////////////////////////////////////////////////////////
 //REFACTOR: Still working out the MegaMotion vs openSimEarth division of labor.
+///////////////////////////////////////////////////////////////////////////////////
+// REFACTOR - Still figuring out what goes with MegaMotion vs openSimEarth.
 
+function mmPullSceneShapes(%simGroup)
+{//So, here we need to remove objects from the MissionGroup and put them into another simGroup.
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
+   {
+      %obj = SceneShapes.getObject(%i);  
+      %simGroup.add(%obj);
+   }
+   for (%i = 0; %i < %simGroup.getCount();%i++)
+      MissionGroup.remove(%simGroup.getObject(%i));
+}
+
+function mmPullSceneShapesAndSave(%simGroup)
+{
+   MegaMotionSaveSceneShapes();
+   
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
+   {
+      %obj = SceneShapes.getObject(%i);  
+      %simGroup.add(%obj);
+   }
+   
+   for (%i = 0; %i < %simGroup.getCount();%i++)
+   {
+      MissionGroup.remove(%simGroup.getObject(%i));
+   }
+}
+
+function mmPushSceneShapes(%simGroup)
+{
+   for (%i = 0; %i < %simGroup.getCount();%i++)
+   {
+      MissionGroup.add(%simGroup.getObject(%i));
+   }
+}
 //Direct copy of EditorSaveMission from menuHandlers.ed.cs. This version exists
 //because mission save is actually just SimObject::save, and that is way too deep 
 //into T3D to be making application level changes. Instead, we just call this one,
@@ -887,6 +1014,11 @@ function MegaMotionSaveMission()
   
    // now write the terrain and mission files out:
    
+   if ($pref::OpenSimEarth::saveSceneShapes)//Do this regardless of terrainPager or not.
+      mmPullSceneShapesAndSave(%tempSceneShapes);
+   else
+      mmPullSceneShapes(%tempSceneShapes);
+      
    
    ///////////////////////////   
    //For terrainPager/openSimEarth, we need to save many things to the database instead of to 
@@ -897,11 +1029,6 @@ function MegaMotionSaveMission()
       %tempRoadGroup = new SimSet();
       %tempForestGroup = new SimSet();
       %tempSceneShapes = new SimSet();
-      
-      if ($pref::OpenSimEarth::saveSceneShapes)
-         osePullSceneShapesAndSave(%tempSceneShapes);
-      else
-         osePullSceneShapes(%tempSceneShapes);
       
       if ($pref::OpenSimEarth::saveStatics)
          osePullStaticsAndSave(%tempStaticGroup);
@@ -921,9 +1048,10 @@ function MegaMotionSaveMission()
    if(EWorldEditor.isDirty || ETerrainEditor.isMissionDirty)
       MissionGroup.save($Server::MissionFile);
       
+   mmPushSceneShapes(%tempSceneShapes);//Do this regardless of terrainPager or not.
+   
    if (isObject(theTP))//FIX!!! Search for objects of type TerrainPager, regardless of name.
    {   
-      osePushSceneShapes(%tempSceneShapes);
       osePushStatics(%tempStaticGroup);
       osePushRoads(%tempRoadGroup);
       //osePushForest($tempForestGroup);
@@ -1257,8 +1385,9 @@ function mmLoadScene(%id)
    %grav = true;
    %ambient = true;
 
-	%query = "SELECT ss.id as ss_id,shape_id,shapeGroup_id,behavior_tree,openSteerProfile_id," @ 
-	         "actionProfile_id,p.x as pos_x,p.y as pos_y,p.z as pos_z," @ 
+	%query = "SELECT ss.id as ss_id,ss.name AS ss_name,shape_id,shapeGroup_id," @ 
+	         "behavior_tree,openSteerProfile_id,actionProfile_id,target_shape_id," @ 
+	         "p.x as pos_x,p.y as pos_y,p.z as pos_z," @ 
 	         "r.x as rot_x,r.y as rot_y,r.z as rot_z,r.angle as rot_angle," @ 
 	         "sc.x as scale_x,sc.y as scale_y,sc.z as scale_z," @ 
 	         "sp.x as scene_pos_x,sp.y as scene_pos_y,sp.z as scene_pos_z," @ 
@@ -1282,10 +1411,12 @@ function mmLoadScene(%id)
       {
          %sceneShape_id = sqlite.getColumn(%resultSet, "ss_id");   
          %shape_id = sqlite.getColumn(%resultSet, "shape_id");
+         %name = sqlite.getColumn(%resultSet, "ss_name");
          %shapeGroup_id = sqlite.getColumn(%resultSet, "shapeGroup_id");//not used yet
-         %behaviorTree = sqlite.getColumn(%resultSet, "behavior_tree");
+         %behavior_tree = sqlite.getColumn(%resultSet, "behavior_tree");
          %openSteer_id = sqlite.getColumn(%resultSet, "openSteerProfile_id");
          %actionProfile_id = sqlite.getColumn(%resultSet, "actionProfile_id");
+         %target_shape = sqlite.getColumn(%resultSet, "target_shape_id");
          
          %pos_x = sqlite.getColumn(%resultSet, "pos_x");
          %pos_y = sqlite.getColumn(%resultSet, "pos_y");
@@ -1307,24 +1438,26 @@ function mmLoadScene(%id)
          %datablock = sqlite.getColumn(%resultSet, "datablock");
          //%skeleton_id = sqlite.getColumn(%resultSet, "skeleton_id");
          
-         echo("Found a sceneShape: " @ %sceneShape_id @ " " @ %pos_x @ " " @ %pos_y @ " " @ %pos_z @
-                " scenePos " @ %scene_pos_x @ " " @ %scene_pos_y @ " " @ %scene_pos_z );
+         //echo("Found a sceneShape: " @ %sceneShape_id @ " " @ %pos_x @ " " @ %pos_y @ " " @ %pos_z @
+         //       " scenePos " @ %scene_pos_x @ " " @ %scene_pos_y @ " " @ %scene_pos_z @
+         //       " behavior tree " @ %behavior_tree );
                 
          %position = (%pos_x + %scene_pos_x) @ " " @ (%pos_y + %scene_pos_y) @ " " @ (%pos_z + %scene_pos_z);
          %rotation = %rot_x @ " " @ %rot_y @ " " @ %rot_z @ " " @ %rot_angle;
          %scale = %scale_x @ " " @ %scale_y @ " " @ %scale_z;
          
-         echo("loading sceneShape id " @ %shape_id @ " position " @ %position @ " rotation " @ 
-               %rotation @ " scale " @ %scale);
+         //echo("loading sceneShape id " @ %shape_id @ " position " @ %position @ " rotation " @ 
+         //      %rotation @ " scale " @ %scale);
          
+         //TEMP -- use name from sceneShape table
+         //%name = "";          
+         //if (%shape_id==4)
+         //   %name = "ka50";   
+         //else if (%shape_id==3)
+         //   %name = "bo105";
+         //else if (%shape_id==2)
+         //   %name = "dragonfly";
          //TEMP
-         %name = "";          
-         if (%shape_id==4)
-            %name = "ka50";   
-         else if (%shape_id==3)
-            %name = "bo105";
-         else if (%shape_id==2)
-            %name = "dragonfly";
             
          %pShape =  new PhysicsShape(%name) {
             playAmbient = %ambient;
@@ -1347,7 +1480,9 @@ function mmLoadScene(%id)
             openSteerID = %openSteer_id;
             actionProfileID = %actionProfile_id;
             shapeGroupID = %shapeGroup_id;
-            targetType = "Health";//"AmmoClip" "Player"
+            targetShapeID = %target_shape;
+            behaviorTreeName = %behavior_tree;
+            targetType = "Health";//"AmmoClip" "Player" //Obsolete?
             isDirty = false;
          };
          //skeletonID = %skeleton_id;
@@ -1355,24 +1490,24 @@ function mmLoadScene(%id)
          MissionGroup.add(%pShape);   
          SceneShapes.add(%pShape);   
 
-         mmShapeSpecifics(%pShape);
          
          if ($mmSelectedSceneShape>0)
          {
             if ($mmSelectedSceneShape==%sceneShape_id)
             {
-               $mmSelectedShape = %temp;
+               $mmSelectedShape = %pShape;
                echo("reselecting selected shape! " @ %temp @ " sceneShape " @ %sceneShape_id);
             }
          }
          
-         echo("Adding a scene shape: " @ %sceneShape_id @ ", position " @ %position );
+         //echo("Adding a scene shape: " @ %sceneShape_id @ ", position " @ %position );
          
-         if ((strlen(%behaviorTree)>0)&&(%behaviorTree!$="NULL"))
+         if ((strlen(%behavior_tree)>0)&&(%behavior_tree!$="NULL")&&($mmSceneAutoplay))
          {
-            %temp.schedule(30,"setBehavior",%behaviorTree);
-            //echo(%temp.getId() @ " assigning behavior tree: " @ %behaviorTree );
+            %pShape.schedule(300,"setBehavior",%behavior_tree);
+            //echo(%pShape.getId() @ " assigning behavior tree: " @ %behavior_tree );
          }
+         %pShape.schedule(500,"shapeSpecifics");
          sqlite.nextRow(%resultSet);
       }
    }   
@@ -1385,44 +1520,61 @@ function mmLoadScene(%id)
    //schedule(40, 0, "mmLoadKeyframeSets");
 } 
 
-function mmMountShapes(%id)
+function mmSetBehaviors(%id)
 {
-   echo("calling MountShapes!!!!!!!!!!!!!!!!!!!!!!!!!!!! sceneShapes " @ SceneShapes.getCount() @ " id " @ %id);
    //Now, do all shapeMounts - except only for shapes from this scene, so we don't do it twice.
    for (%i = 0; %i < SceneShapes.getCount();%i++)
    {
       %obj = SceneShapes.getObject(%i); 
-      echo("Object sceneID " @ %obj.sceneID);
       if (%obj.sceneID==%id)
       {
-         %obj.mountShapes();
-         echo("adding a mountShape, sceneShapeID " @  %obj.sceneShapeID);
-      }     
+         if ((strlen(%obj.behaviorTreeName)>0)&&(%obj.behaviorTreeName!$="NULL"))
+         {
+            %obj.setBehavior(%obj.behaviorTreeName);   
+            //%obj.getClientObject().setBehavior(%obj.behaviorTree);        
+            //echo(%obj.getId() @ " assigning behavior tree: " @ %obj.behaviorTreeName @ " is server " @ %obj.isServerObject() );
+         }         
+      }
    }
 }
 
-function mmShapeSpecifics(%pShape)
+//These are for custom code, whatever your needed action of the moment.
+function mmSceneAction1()
 {
- 
-   //Hmm, not sure where to do this stuff, but how about not here.
-   if (%pShape.dataBlock $= "M4Physics") 
-   {            
-   } 
-   else if (%pShape.dataBlock $= "bo105Physics") 
-   {            
-   } 
-   else if (%pShape.dataBlock $= "dragonflyPhysics") 
-   {            
-   } 
-   else 
-   if (%pShape.dataBlock $= "ka50Physics") 
+   //Now, do all shapeMounts - except only for shapes from this scene, so we don't do it twice.
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
    {
-      echo("Found a ka50!!");
-      %pShape.schedule(500,"showRotorBlades");
-      //%pShape.schedule(500,"setUseDataSource",true);
-   }  
+      %obj = SceneShapes.getObject(%i); 
+      if (%obj.shapeGroupID==1)
+      {
+         %client = %obj.getClientObject();
+         %client.setDynamic(1);
+         %delay = 10 + getRandom(600);
+         echo("applying impulse! delay " @ %delay);
+         %client.schedule(%delay,"applyImpulseToPart","2","0 0 0","0 -0.001 0"); 
+         //%obj.getClientObject().setBehavior(%obj.behaviorTree);  
+         %obj.setBehavior("FallingTree");                    
+      }
+   }
 }
 
+function mmSceneAction2()
+{
+
+}
+
+function mmMountShapes(%id)
+{
+   //Now, do all shapeMounts - except only for shapes from this scene, so we don't do it twice.
+   for (%i = 0; %i < SceneShapes.getCount();%i++)
+   {
+      %obj = SceneShapes.getObject(%i); 
+      if (%obj.sceneID==%id)
+      {
+         %obj.mountShapes();
+      }     
+   }
+}
 
 function mmUnloadScene(%id)
 {
@@ -1459,97 +1611,6 @@ function mmUnloadScene(%id)
    }   
 }
 
-//Obsolete! We no longer want to load all keyframeSets at once, we want to deal with them
-//one at a time, on demand.
-/*
-function mmLoadKeyframeSets()
-{   
-   echo("calling loadKeyframeSets!");
-   %scene_id = $mmSceneList.getSelected();
-   if ((%scene_id<=0)||(SceneShapes.getCount()==0))
-      return;
-  
-  //First, make a distinct list of existing shapes, discarding duplicates.
-   %numShapes = 0; //(Consider making this list global so we have it later.)
-   for (%i=0;%i<SceneShapes.getCount();%i++)
-   {
-      %shape = SceneShapes.getObject(%i);
-      %shape_id = %shape.shapeID;  
-      if (%numShapes==0)
-      {
-         %shapes[%numShapes] = %shape;
-         %shape_ids[%numShapes] = %shape_id;
-         %numShapes++;
-      }
-      else
-      {
-         %found = 0;
-         for (%j=0;%j<%numShapes;%j++)
-            if (%shape_ids[%j]==%shape_id)
-               %found=1;         
-         if (%found==0)
-         {
-            %shapes[%numShapes] = %shape;
-            %shape_ids[%numShapes] = %shape_id;
-            %numShapes++;
-         }
-      }
-   }
-   if (%numShapes==0)
-      return;
-      
-   echo("found " @ %numShapes @ " distinct shapes!");
-   
-   for (%i=0;%i<%numShapes;%i++)
-   {
-      %shape = %shapes[%i];
-      %shape_id = %shape_ids[%i];
-      
-      %query = "SELECT * FROM keyframeSet WHERE shape_id=" @ %shape_id @ ";";
-      %resultSet = sqlite.query(%query,0);        
-      while (!sqlite.endOfResult(%resultSet))
-      { 
-         %set_id = sqlite.getColumn(%resultSet,"id");
-         %sequence = sqlite.getColumn(%resultSet,"sequence_name");
-         %name = sqlite.getColumn(%resultSet,"name");
-         
-         %shape.addKeyframeSet(%sequence);
-         
-         %query2 = "SELECT * FROM keyframeSeries WHERE set_id=" @ %set_id @ ";";
-         %resultSet2 = sqlite.query(%query2,0);
-         while (!sqlite.endOfResult(%resultSet2))
-         {
-            %series_id = sqlite.getColumn(%resultSet2,"id");
-            %type = sqlite.getColumn(%resultSet2,"type");
-            %node = sqlite.getColumn(%resultSet2,"node");
-            
-            %shape.addKeyframeSeries(%type,%node);
-            echo("adding a keyframeSeries! " @ %series_id);
-            %query3 = "SELECT * FROM keyframe WHERE series_id=" @ %series_id @ " ORDER BY frame;";
-            %resultSet3 = sqlite.query(%query3,0);
-            while (!sqlite.endOfResult(%resultSet3))
-            {
-               %frame = sqlite.getColumn(%resultSet3,"frame");
-               %x = sqlite.getColumn(%resultSet3,"x");
-               %y = sqlite.getColumn(%resultSet3,"y");
-               %z = sqlite.getColumn(%resultSet3,"z");
-               
-               %shape.addKeyframe(%frame,%x,%y,%z);
-               echo("adding a keyframe! " @ %frame);
-               
-               sqlite.nextRow(%resultSet3); 
-            }            
-            sqlite.nextRow(%resultSet2); 
-         }
-         
-         %shape.applyKeyframeSet();
-         echo("applying keyframeSet! " @ %set_id);
-         
-         sqlite.nextRow(%resultSet);          
-      }
-   }   
-}
-*/
 
 function mmSelectSceneShape()
 {
@@ -1617,7 +1678,9 @@ function mmSelectSceneShape()
       
       $mmShapeList.setSelected(%shape_id);
       
-      $mmSceneShapeBehaviorTree.setText(%behavior_tree); 
+      echo("selecting sceneShape! shapeGroup " @ %group_id @ " behavior " @ %behavior_tree);
+      
+      $mmSceneShapeBehaviorTreeList.setSelected($mmSceneShapeBehaviorTreeList.findText(%behavior_tree));
       $mmShapeGroupList.setSelected(%group_id);
       $mmOpenSteerList.setSelected(%openSteer_id);
       
@@ -1700,10 +1763,43 @@ function mmReallyDeleteSceneShape(%id)
                            //together whenever possible just in case. (didn't work?)
 }
 
+function mmSelectBehaviorTree()
+{//Assign this behavior tree to all selected sceneShapes.
+   %tree = $mmSceneShapeBehaviorTreeList.getText();
+   for (%i=0;%i<EWorldEditor.getSelectionSize();%i++)
+   {
+      %obj = EWorldEditor.getSelectedObject( %i );
+      if ((%obj.getClassName() $= "PhysicsShape")&&(%obj.sceneShapeID>0)&&
+            (%obj.behaviorTree !$= %tree))
+      {
+         %query = "UPDATE sceneShape SET behavior_tree='" @ %tree @ "'" @ 
+                  " WHERE id=" @ %obj.sceneShapeID @ ";";   
+         sqlite.query(%query,0);
+      }
+   }
+}
 
 function mmSelectShapeGroup()
 {
-   //select all instantiated members of this group
+   %group_id = $mmShapeGroupList.getSelected();
+   if (EWorldEditor.getSelectionSize()==0)
+   {
+     //select all instantiated members of this shapeGroup   
+     return;
+   } 
+    
+   for (%i=0;%i<EWorldEditor.getSelectionSize();%i++)
+   {
+      %obj = EWorldEditor.getSelectedObject( %i );
+      if ((%obj.getClassName() $= "PhysicsShape")&&(%obj.sceneShapeID>0)&&
+            (%obj.shapeGroupID != %group_id))
+      {
+         %query = "UPDATE sceneShape SET shapeGroup_id='" @ %group_id @ "'" @ 
+                  " WHERE id=" @ %obj.sceneShapeID @ ";";   
+         sqlite.query(%query,0);
+      }
+   }  
+   
 }
 
 function mmAddPhysicsShape()
@@ -2152,8 +2248,8 @@ function mmSetupAddSceneShapeWindow()
    if ($mmShapeGroupList.getSelected()>0)
       %groupList.setSelected($mmShapeGroupList.getSelected());
       
-   if (strlen($mmSceneShapeBehaviorTree.getText())>0)
-      %behaviorTree.setText($mmSceneShapeBehaviorTree.getText());
+   if (strlen($mmSceneShapeBehaviorTreeList.getText())>0)
+      %behaviorTree.setText($mmSceneShapeBehaviorTreeList.getText());
       
    %posX = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionX"); 
    %posY = mmAddSceneShapeWindow.findObjectByInternalName("shapePositionY"); 
@@ -4257,9 +4353,19 @@ function mmSequenceSetInBar()
    $mmSelectedShape.getClientObject().recordCropStartPositions();//Used for loop detecting.
    
    %numFrames = $mmSequenceSlider.range.y;
-   %newPos = $mmSequenceSlider.getPosition();
-   %newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);//Slider can't go to end.
-   %newPos.y -= 12;
+   %pos_x = $mmSequenceSlider.position.x ;
+   %slider_value = $mmSequenceSlider.getValue() / %numFrames;
+   %extent_x = $mmSequenceSlider.extent.x;
+   %newPos_x = %pos_x + (%slider_value * %extent_x);
+   %newPos_y = getWord(%outPos,1);
+   %newPos = %newPos_x @ " " @ %newPos_y;
+   //%newPos = $mmSequenceSlider.getPosition() + $mmSequenceSlider.getValue() ;
+   //%newPos.x += (%frame / %numFrames) * ($mmSequenceSlider.extent.x - 12);//Slider can't go to end.
+   //%newPos.y -= 12;
+   
+   echo("setting In position " @ %newPos @ " out position is " @ %outPos @ " posX " @ %pos_x @
+         " value " @ %slider_value @ " extent x " @ %extent_x);
+   
    
    if (%outPos.x < %newPos.x)
    {
@@ -4722,10 +4828,6 @@ function shapesAct()
 
 
 
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //For each form that we hook up to a top menu, give it an "expose" function to load it and call setup for it.
 //OBSOLETE, TESTING /////////////////////////////
@@ -4780,3 +4882,95 @@ function setupMegaMotionForm()
 //{
    //echo("MegaMotionWindow onMouseUp!!!!  this.pos " @ %this.getPosition() @ " mouse pos " @ %pos);  
 //}
+
+//Obsolete! We no longer want to load all keyframeSets at once, we want to deal with them
+//one at a time, on demand.
+/*
+function mmLoadKeyframeSets()
+{   
+   echo("calling loadKeyframeSets!");
+   %scene_id = $mmSceneList.getSelected();
+   if ((%scene_id<=0)||(SceneShapes.getCount()==0))
+      return;
+  
+  //First, make a distinct list of existing shapes, discarding duplicates.
+   %numShapes = 0; //(Consider making this list global so we have it later.)
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);
+      %shape_id = %shape.shapeID;  
+      if (%numShapes==0)
+      {
+         %shapes[%numShapes] = %shape;
+         %shape_ids[%numShapes] = %shape_id;
+         %numShapes++;
+      }
+      else
+      {
+         %found = 0;
+         for (%j=0;%j<%numShapes;%j++)
+            if (%shape_ids[%j]==%shape_id)
+               %found=1;         
+         if (%found==0)
+         {
+            %shapes[%numShapes] = %shape;
+            %shape_ids[%numShapes] = %shape_id;
+            %numShapes++;
+         }
+      }
+   }
+   if (%numShapes==0)
+      return;
+      
+   echo("found " @ %numShapes @ " distinct shapes!");
+   
+   for (%i=0;%i<%numShapes;%i++)
+   {
+      %shape = %shapes[%i];
+      %shape_id = %shape_ids[%i];
+      
+      %query = "SELECT * FROM keyframeSet WHERE shape_id=" @ %shape_id @ ";";
+      %resultSet = sqlite.query(%query,0);        
+      while (!sqlite.endOfResult(%resultSet))
+      { 
+         %set_id = sqlite.getColumn(%resultSet,"id");
+         %sequence = sqlite.getColumn(%resultSet,"sequence_name");
+         %name = sqlite.getColumn(%resultSet,"name");
+         
+         %shape.addKeyframeSet(%sequence);
+         
+         %query2 = "SELECT * FROM keyframeSeries WHERE set_id=" @ %set_id @ ";";
+         %resultSet2 = sqlite.query(%query2,0);
+         while (!sqlite.endOfResult(%resultSet2))
+         {
+            %series_id = sqlite.getColumn(%resultSet2,"id");
+            %type = sqlite.getColumn(%resultSet2,"type");
+            %node = sqlite.getColumn(%resultSet2,"node");
+            
+            %shape.addKeyframeSeries(%type,%node);
+            echo("adding a keyframeSeries! " @ %series_id);
+            %query3 = "SELECT * FROM keyframe WHERE series_id=" @ %series_id @ " ORDER BY frame;";
+            %resultSet3 = sqlite.query(%query3,0);
+            while (!sqlite.endOfResult(%resultSet3))
+            {
+               %frame = sqlite.getColumn(%resultSet3,"frame");
+               %x = sqlite.getColumn(%resultSet3,"x");
+               %y = sqlite.getColumn(%resultSet3,"y");
+               %z = sqlite.getColumn(%resultSet3,"z");
+               
+               %shape.addKeyframe(%frame,%x,%y,%z);
+               echo("adding a keyframe! " @ %frame);
+               
+               sqlite.nextRow(%resultSet3); 
+            }            
+            sqlite.nextRow(%resultSet2); 
+         }
+         
+         %shape.applyKeyframeSet();
+         echo("applying keyframeSet! " @ %set_id);
+         
+         sqlite.nextRow(%resultSet);          
+      }
+   }   
+}
+*/

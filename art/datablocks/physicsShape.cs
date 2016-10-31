@@ -102,7 +102,7 @@ datablock PhysicsShapeData( makeHumanPhysics )
    findItemRange = 800;
    
    // min range to look for items, ie if we're this close we found it.
-   foundItemDistance = 2.25;
+   foundItemDistance = 1.25;
    
    // the type of object to search for when looking for targets
    targetObjectTypes = $TypeMasks::PlayerObjectType;
@@ -175,7 +175,7 @@ datablock PhysicsShapeData( M4Physics )
    findItemRange = 800;
    
    // min range to look for items, ie if we're this close we found it.
-   foundItemDistance = 2.25;
+   foundItemDistance = 1.8;
    
    // the type of object to search for when looking for targets
    targetObjectTypes = $TypeMasks::PlayerObjectType;

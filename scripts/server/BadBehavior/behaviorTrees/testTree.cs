@@ -37,8 +37,8 @@ new Root(testTree) {
             canSaveDynamicFields = "1";      
                    
             new RandomWait() {
-               waitMinMs = "15000";
-               waitMaxMs = "25000";
+               waitMinMs = "1500";
+               waitMaxMs = "2500";
                canSave = "1";
                canSaveDynamicFields = "1";
             };   

@@ -77,6 +77,7 @@ function initServer()
    exec("./openSimEarth.cs");
    exec("./uiForms.cs");
    exec("./MegaMotion.cs");
+   exec("./MegaMotionBehaviors.cs");
    exec("./physicsShape.cs");
    exec("./terrainPager.cs");
    

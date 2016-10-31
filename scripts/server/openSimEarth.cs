@@ -180,66 +180,9 @@ function goToGround::behavior(%this, %obj)
 }
 */
 
-///////////////////////////////////
-//getUp::precondition()
-//getUp::onEnter()
-//getUp::onExit()
 
-function getUp::behavior(%this, %obj)
-{
-   
-   return SUCCESS;
-}
 
-///////////////////////////////////
-//moveToPosition::precondition()
-//moveToPosition::onEnter()
-//moveToPosition::onExit()
-
-function moveToPosition::behavior(%this, %obj)
-{
-   //echo("calling move to position!");
-   %obj.groundMove();
-   return SUCCESS;   
-}
-
-///////////////////////////////////////////////////////////////////////////////////
-// REFACTOR - Still figuring out what goes with MegaMotion vs openSimEarth.
-
-function osePullSceneShapes(%simGroup)
-{//So, here we need to remove objects from the MissionGroup and put them into another simGroup.
-   for (%i = 0; %i < SceneShapes.getCount();%i++)
-   {
-      %obj = SceneShapes.getObject(%i);  
-      %simGroup.add(%obj);
-   }
-   for (%i = 0; %i < %simGroup.getCount();%i++)
-      MissionGroup.remove(%simGroup.getObject(%i));
-}
-
-function osePullSceneShapesAndSave(%simGroup)
-{
-   MegaMotionSaveSceneShapes();
-   
-   for (%i = 0; %i < SceneShapes.getCount();%i++)
-   {
-      %obj = SceneShapes.getObject(%i);  
-      %simGroup.add(%obj);
-   }
-   
-   for (%i = 0; %i < %simGroup.getCount();%i++)
-   {
-      MissionGroup.remove(%simGroup.getObject(%i));
-   }
-}
-
-function osePushSceneShapes(%simGroup)
-{
-   for (%i = 0; %i < %simGroup.getCount();%i++)
-   {
-      MissionGroup.add(%simGroup.getObject(%i));
-   }
-}
+/////////////////////////////////////////////////
 
 function osePullStatics(%simGroup)
 {//So, here we need to remove objects from the MissionGroup and put them into another simGroup.
@@ -313,20 +256,6 @@ function osePushRoads(%simGroup)
    {
       MissionGroup.add(%simGroup.getObject(%i));
    }
-}
-
-//OBSOLETE
-function assignBehaviors()
-{//This seems arbitrary, store initial behavior tree and dynamic status in sceneShape instead.
-      
-   for (%i=0;%i<SceneShapes.getCount();%i++)
-   {
-      %shape = SceneShapes.getObject(%i);  
-      
-      %shape.setBehavior("baseTree");
-      
-      //%shape.setDynamic(1);       
-   }   
 }
 
 function loadOSM()  // OpenStreetMap XML data

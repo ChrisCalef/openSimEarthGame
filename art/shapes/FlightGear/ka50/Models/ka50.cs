@@ -15,8 +15,8 @@ function ka50_Dts::onLoad(%this)
    %this.addCollisionDetail("-1", "Sphere", "Bounds", "4", "30", "30", "32", "30", "30", "30");
    %this.addNode("rotormount", "", "0.168 0 0.973 0 0 1 0", "0");
    
-   //%this.addSequence("art/shapes/fg_convert/bo105/test01.dsq", "ambient", "0", "-1");
-   //%this.setSequenceCyclic("ambient", "1");
+   %this.addSequence("art/shapes/FlightGear/ka50/Models/sequences/15_611.dsq", "flight", "0", "-1");
+   %this.setSequenceCyclic("flight", "1");
    //%this.addSequence("art/shapes/fg_convert/bo105/test02.dsq", "test02", "0", "-1");
    //%this.setSequenceCyclic("test02", "1");   
 }

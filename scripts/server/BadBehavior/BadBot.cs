@@ -348,18 +348,13 @@ function getHealthTask::precondition(%this, %obj)
 
 function getHealthTask::onEnter(%this, %obj)
 {
-   echo(%obj.getId() @ " trying to get health!");
-   // move to the item
    %obj.moveTo(%obj.targetItem);  
-   //%obj.orientToPos(%obj.targetItem.position);
-
 }
 
 function getHealthTask::behavior(%this, %obj)
-{
+{  
    // succeed when we reach the item
    %diff = VectorSub(%obj.targetItem.position ,%obj.position);
-   //if(!%obj.atDestination)
    if ( VectorLen(%diff) > %obj.dataBlock.foundItemDistance )
       return RUNNING;
    

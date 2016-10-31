@@ -45,6 +45,8 @@ function M4Dts::onLoad(%this)
    %this.addSequence("art/shapes/Daz3D/Michael4/CMU/03/03_03.dsq", "CMU_03_03", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/CMU/03/03_04.dsq", "CMU_03_04", "0", "-1");
    
+   %this.addSequence("art/shapes/Daz3D/Michael4/CMU/139/139_09.dsq", "CMU_139_09", "0", "-1");
+   
    %this.addSequence("art/shapes/Daz3D/Michael4/sequences/BellyDancer.dsq", "bellyDancer", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/sequences/ACCAD_sway.dsq", "ACCAD_sway", "0", "-1");
 
@@ -59,7 +61,9 @@ function M4Dts::onLoad(%this)
    %this.addSequence("art/shapes/Daz3D/Michael4/work/blockfall_03.dsq", "blockfall_03", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/work/blockfall_04.dsq", "blockfall_04", "0", "-1");
    %this.addSequence("art/shapes/Daz3D/Michael4/work/blockfall_no_grav_.dsq", "blockfall_no_grav", "0", "-1");
-   
+   //%this.addSequence("art/shapes/Daz3D/Michael4/work/cower_01.dsq", "cower", "0", "-1");
+
+   %this.addSequence("art/shapes/Daz3D/Michael4/scenes/11_737.dsq", "11_737", "0", "-1");
 
    %this.setSequenceCyclic("ambient", "1");
    %this.setSequenceCyclic("walk", "1");
@@ -69,6 +73,7 @@ function M4Dts::onLoad(%this)
    %this.setSequenceCyclic("runscerd", "1");
    %this.setSequenceCyclic("tpose", "1");
    %this.setSequenceCyclic("swingUnder", "1");
+   %this.setSequenceCyclic("cower", "1");
       
    %this.addNode("Col-1","root");
    %this.addCollisionDetail(-1,"box","bounds");   
