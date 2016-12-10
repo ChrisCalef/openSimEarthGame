@@ -24,8 +24,8 @@ function PhysicsShape::shapeSpecifics(%this)
    {
       echo("Calling shapeSpecifics for ka50!!!!!!!!!!!!!!!!!!!!!");
       %this.schedule(500,"showRotorBlades");
-      //%pShape.schedule(500,"setUseDataSource",true);
-      //%pShape.setIsRecording(true);
+      //%this.schedule(500,"setUseDataSource",true);
+      //%this.setIsRecording(true);
    }  
 }
 
@@ -82,6 +82,9 @@ function PhysicsShape::onStartup(%this)
 
 function PhysicsShape::openSteerSimpleVehicle(%this)
 {   
+   if (%this.getVehicleID()>0)
+      return;//We've already done all this, so don't do it again.
+      
    %this.currentAction = "walk";
    
    if (%this.isServerObject())
@@ -116,8 +119,16 @@ function PhysicsShape::openSteerSimpleVehicle(%this)
 }
 
 function PhysicsShape::openSteerNavVehicle(%this)
-{
-   if (%this.getVehicleID()>0)
+{   
+   if (%this.isServerObject())
+      %clientShape = %this.getClientObject();
+   else 
+      %clientShape = %this;   
+      
+   %this.currentPathNode = 0;
+   %clientShape.currentPathNode = 0;
+   
+   if (%clientShape.getVehicleID()>0)
       return;//We've already done all this, so don't do it again.
       
    if (!isObject(Nav))//TEMP! Search MissionGroup for all NavMesh objects, pick best one.
@@ -127,10 +138,6 @@ function PhysicsShape::openSteerNavVehicle(%this)
    
    %this.currentAction = "walk";
    
-   if (%this.isServerObject())
-      %clientShape = %this.getClientObject();
-   else 
-      %clientShape = %this;   
       
    %clientShape.createVehicle(%clientShape.getPosition(),0);
    %clientShape.openSteerID = %this.openSteerID;
@@ -157,9 +164,9 @@ function PhysicsShape::openSteerNavVehicle(%this)
       %clientShape.setOpenSteerAvoidNeighborWeight(sqlite.getColumn(%resultSet,"avoidNeighborWeight"));
       %clientShape.setOpenSteerAvoidNavMeshEdgeWeight(sqlite.getColumn(%resultSet,"avoidNavMeshEdgeWeight"));
       %clientShape.setOpenSteerDetectNavMeshEdgeRange(sqlite.getColumn(%resultSet,"detectNavMeshEdgeRange"));
-   }
-   
+   }   
 }
+
 /*
    //AND... NOPE! Not yet.This will be trivial but no time right now for it. Array didn't work. Need to create
    // a new engine level object and communicate properties to script, so I can say new OpenSteerProfile() and
@@ -177,6 +184,7 @@ function PhysicsShape::openSteerNavVehicle(%this)
    %clientShape.setOpenSteerAvoidNavMeshEdgeWeight($openSteerProfile[%id].avoidNavMeshEdgeWeight);
    %clientShape.setOpenSteerDetectNavMeshEdgeRange($openSteerProfile[%id].detectNavMeshEdgeRange);
    */
+   
 function PhysicsShape::orientTo(%this, %dest)
 {
    %pos = isObject(%dest) ? %dest.getPosition() : %dest;
@@ -200,7 +208,7 @@ function PhysicsShape::say(%this, %message)//Testing, does this only work for AI
 
 function PhysicsShape::findTargetShapePos(%this)
 { 
-   echo("seeking target shape: " @ %this.targetShapeID);
+   echo(%this.sceneShapeID @ " is seeking target shape: " @ %this.targetShapeID @ " isServer " @ %this.isServerObject());
    if (%this.targetShapeID>0)
    {
       for (%i = 0; %i < SceneShapes.getCount();%i++)
@@ -210,11 +218,11 @@ function PhysicsShape::findTargetShapePos(%this)
          {
             %this.goalPos = %targ.getClientObject().getPosition();
             %this.targetItem = %targ.getClientObject();
+            echo(%this.sceneShapeID @ " found target shape: " @ %this.targetShapeID @ " pos " @ %this.goalPos);
             return;
          }
       }
-   } 
-  
+   }   
    return;
 }
 

@@ -30,6 +30,12 @@ new Root(FallingTree) {
             canSave = "1";
             canSaveDynamicFields = "1";
          };
+         new RandomWait() {
+            waitMinMs = "30000";
+            waitMaxMs = "35000";
+            canSave = "1";
+            canSaveDynamicFields = "1";
+         };    
       };      
    };
 };

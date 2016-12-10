@@ -7,13 +7,17 @@ new Root(navGoToTargetTree) {
       canSave = "1";
       canSaveDynamicFields = "1";
 
+      new Wait() {
+         waitMs = "500";
+         canSave = "1";
+         canSaveDynamicFields = "1";
+      };
       new ScriptEval() {
          behaviorScript = "%obj.findTargetShapePos(); %obj.groundMove();";
          defaultReturnStatus = "SUCCESS";
          canSave = "1";
          canSaveDynamicFields = "1";
-      };
-      
+      };      
       new Loop() {
          numLoops = "0";
          terminationPolicy = "ON_SUCCESS";

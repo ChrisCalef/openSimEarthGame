@@ -117,6 +117,8 @@ function goToTarget::precondition(%this, %obj)
 
 function goToTarget::onEnter(%this, %obj)
 {
+   echo("goToTarget::onEnter");
+   
    %obj.currentAction = "run";
    
    %obj.moveTo(%obj.findGroundPosition(%obj.goalPos));  
@@ -124,6 +126,7 @@ function goToTarget::onEnter(%this, %obj)
 
 function goToTarget::behavior(%this, %obj)
 {
+   echo("goToTarget::behavior");
    // succeed when we reach the item  
    %clientGroundPos = %obj.findGroundPosition(%obj.getClientPosition());
    %diff = VectorSub(%obj.goalPos,%clientGroundPos);
@@ -320,24 +323,30 @@ function openSteerGoToTarget::behavior(%this, %obj)
 //=============================================================================
 function openSteerNavGoToTarget::precondition(%this, %obj)
 {
+   //echo(%obj.sceneShapeID @ " openSteerNavGoToTarget::precondition - goalPos " @ %obj.goalPos @ 
+   //      " len " @ VectorLen(%obj.goalPos) @ " currentGoal " @ %obj.currentPathGoal);
+         
    return (VectorLen(%obj.goalPos)>0);
 }
 
 function openSteerNavGoToTarget::onEnter(%this, %obj)
 {
+   //echo(%obj.sceneShapeID @ " openSteerNavGoToTarget::onEnter, currentGoal " @ %obj.currentPathGoal);
+   %clientObj = %obj.getClientObject();
    if (%obj.currentPathNode==0)//Well this is weird, this time it's calling onEnter all the time...??
    {
-      if (%obj.getVehicleID()==0)
-         %obj.openSteerNavVehicle();
+      if (%clientObj.getVehicleID()==0)
+         %clientObj.openSteerNavVehicle();
+         
       %obj.setUseSteering(true);
       
       %obj.setNavPathTo(%obj.goalPos);
    
       %obj.currentPathNode = 1;
       %obj.currentPathGoal = %obj.getNavPathNode(%obj.currentPathNode);
-      //echo("openSteerGoToTarget, onEnter, first goal: " @ %obj.currentPathGoal @ 
-      //         " ultimate target " @ %obj.targetItem.position);
-      %clientObj = %obj.getClientObject();
+      //echo("setting new path goal: " @ %obj.currentPathGoal @ "  current node " @ %obj.currentPathNode @
+      //             " total nodes " @ %obj.getNavPathSize() );
+      
       %clientObj.setOpenSteerMoveTarget(%obj.currentPathGoal);
       %clientObj.setUseSteering(true);
    }
@@ -345,36 +354,32 @@ function openSteerNavGoToTarget::onEnter(%this, %obj)
 
 function openSteerNavGoToTarget::behavior(%this, %obj)
 {
+   //echo("openSteerNavGoToTarget::behavior");
    // succeed when we reach the item
-   //HERE: we need targetitem position to be on the ground, not at the actual position, 
-   //or else we can never be closer than the height of the object.
-  
+   
    %clientObj = 0;
    if (%obj.isServerObject())
    {
       %clientObj =  %obj.getClientObject();
    }
+   //if (%obj.targetShapeID>0)
    
-   %groundPos = %obj.findGroundPosition(%obj.goalPos);
-   %targetMove = VectorLen(%groundPos - %obj.getNavPathNode(%obj.getNavPathSize()-1));
-   %clientGroundPos = %obj.findGroundPosition(%obj.getClientPosition());//NOTE: this "client" refers to the player
-   %diff = VectorSub(%groundPos,%clientGroundPos);//Where "clientObj" above refers to client ghost of this shape.
-   //if(!%obj.atDestination)   
-   //echo("my position " @ %obj.getClientPosition() @ " goal " @ %obj.currentPathGoal @ 
-   //      " diff " @ VectorLen(%diff)  @  "  target move " @ %targetMove @ " target pos " @ 
-   //       %obj.targetItem.position );
+   //%groundPos = %obj.findGroundPosition(%obj.goalPos);
+   %currentTargPos = %obj.findGroundPosition(%obj.targetItem.getPosition());
+   %moveDiff = VectorSub(%obj.goalPos,%currentTargPos);
    
-   if ((%obj.currentPathNode == 0)||(%targetMove>2.0))//2.0=%obj.targetMoveThreshold?
+   %clientGroundPos = %obj.findGroundPosition(%obj.getClientPosition());//Note: getClientPosition refers to player
+   %finalDiff = VectorSub(%obj.findGroundPosition(%clientObj.getPosition()),%currentTargPos);
+   
+   if (VectorLen(%moveDiff)>(%obj.dataBlock.foundItemDistance*2))
    {    
-      //echo("setting NavPathTo, pathNode=0");
-      %obj.setNavPathTo(%groundPos);   
+      %obj.setNavPathTo(%currentTargPos);   
       %obj.currentPathNode = 1;
       %obj.currentPathGoal = %obj.getNavPathNode(%obj.currentPathNode);
-      //echo("New Target, first goal: " @ %obj.currentPathGoal);
-      //%obj.moveTo(%obj.currentPathGoal);   
       %clientObj.setOpenSteerMoveTarget(%obj.currentPathGoal);
+      return RUNNING;
    }
-   if ( VectorLen(%diff) > %obj.dataBlock.foundItemDistance )
+   if ( VectorLen(%finalDiff) > %obj.dataBlock.foundItemDistance )
    {
       %nodeDiff = VectorSub(%obj.currentPathGoal,%clientGroundPos);
       //echo("checking distance to path node: " @ VectorLen(%nodeDiff) );
@@ -384,10 +389,8 @@ function openSteerNavGoToTarget::behavior(%this, %obj)
       if (VectorLen(%nodeDiff) < %obj.dataBlock.foundItemDistance)
       {
          %obj.currentPathNode++;
-         %obj.currentPathGoal = %obj.getNavPathNode(%obj.currentPathNode);
+         %obj.currentPathGoal = %obj.getNavPathNode(%obj.currentPathNode-1);
          
-         //echo("setting new path goal: " @ %obj.currentPathGoal @ "  current node " @ %obj.currentPathNode @
-         //          " total nodes " @ %obj.getNavPathSize() );
          //%obj.moveTo(%obj.currentPathGoal); 
          %clientObj.setOpenSteerMoveTarget(%obj.currentPathGoal);
       }
@@ -397,7 +400,7 @@ function openSteerNavGoToTarget::behavior(%this, %obj)
    {
       %obj.currentPathNode = 0;
       //%obj.currentPathGoal = %obj.getClientPosition();
-      %obj.actionSeq("ambient");//Here: change to idle tree? No, play idle action while waiting for target to move away again.
+      //%obj.actionSeq("ambient");//Here: change to idle tree? No, play idle action while waiting for target to move away again.
       %obj.setOpenSteerSpeed(0.0);//HERE: I think we need to do more, this doesn't stop it from thinking.
       %obj.setUseSteering(false);
       return SUCCESS;

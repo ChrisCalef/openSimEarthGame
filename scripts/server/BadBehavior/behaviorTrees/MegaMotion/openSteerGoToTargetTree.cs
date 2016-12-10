@@ -7,13 +7,17 @@ new Root(openSteerGoToTargetTree) {
       canSave = "1";
       canSaveDynamicFields = "1";      
       
-      new ScriptEval() {
-         behaviorScript = "%obj.openSteerVehicle(); %obj.findTargetShapePos(); %obj.groundMove();";
-         defaultReturnStatus = "SUCCESS";
+      new Wait() {
+         waitMs = "3000";
          canSave = "1";
          canSaveDynamicFields = "1";
       };
-          
+      new ScriptEval() {
+         behaviorScript = "%obj.openSteerSimpleVehicle(); %obj.findTargetShapePos(); %obj.groundMove();echo(\"starting openSteerGoToTargetTree.\");";
+         defaultReturnStatus = "SUCCESS";
+         canSave = "1";
+         canSaveDynamicFields = "1";
+      };          
       new Loop() {
          numLoops = "0";
          terminationPolicy = "ON_FAILURE"; 
@@ -30,6 +34,11 @@ new Root(openSteerGoToTargetTree) {
                canSave = "1";
                canSaveDynamicFields = "1";
             };  
+            new SubTree() {
+               subTreeName = "idleTree";
+               canSave = "1";
+               canSaveDynamicFields = "1";
+            };
          };
       };
    };

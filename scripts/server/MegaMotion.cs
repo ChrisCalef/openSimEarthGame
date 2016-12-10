@@ -150,7 +150,7 @@ function exposeMegaMotionScenesForm()
    %scene_id = 0;
    %sceneShape_id = 0;
    %sequence_id = 0;
-   %tab_page = 3;//SceneShapeTab=3, not BvhTab=0
+   %tab_page = 4;//SceneShapeTab=4
    
    if (isDefined("MegaMotionScenes"))
    {
@@ -215,15 +215,15 @@ function setupMegaMotionScenesForm()
    $mmSequenceTab = $mmTabBook.findObjectByInternalName("sequenceTab");
    $mmBvhTab = $mmTabBook.findObjectByInternalName("bvhTab");
    $mmAiTab = $mmTabBook.findObjectByInternalName("aiTab");
+   $mmSceneTab = $mmTabBook.findObjectByInternalName("sceneTab");
 
    $mmShapePartTab.setTabIndex(0);
    $mmBvhTab.setTabIndex(1);
    $mmSequenceTab.setTabIndex(2); 
    $mmAiTab.setTabIndex(3); 
    $mmSceneShapeTab.setTabIndex(4);
+   $mmSceneTab.setTabIndex(5);
    $mmTabBook.reArrange();   
-   
-   $mmTabBook.selectPage(1);
    
    mmSetupSceneShapeTab();
    
@@ -234,6 +234,8 @@ function setupMegaMotionScenesForm()
    mmSetupBvhTab();
    
    mmSetupAiTab();
+   
+   mmSetupSceneTab();
    
    mmRefreshShapeLists();
    
@@ -519,7 +521,11 @@ function mmSetupAiTab()
       }
       sqlite.clearResult(%resultSet);
    }
-   
+}
+
+function mmSetupSceneTab()
+{
+   //Nothing to do yet.   
 }
 
 function mmRefreshShapeLists()
@@ -1548,10 +1554,11 @@ function mmSceneAction1()
       if (%obj.shapeGroupID==1)
       {
          %client = %obj.getClientObject();
-         %client.setDynamic(1);
-         %delay = 10 + getRandom(600);
+         //%client.setDynamic(1);
+         %delay = 10 + getRandom(800);
          echo("applying impulse! delay " @ %delay);
-         %client.schedule(%delay,"applyImpulseToPart","2","0 0 0","0 -0.001 0"); 
+         %client.schedule(%delay,"applyImpulseToPart","2","0 0 0","0 0.003 0"); 
+         %client.schedule(%delay+100,"applyImpulseToPart","4","0 0 0","0 0.003 0");
          //%obj.getClientObject().setBehavior(%obj.behaviorTree);  
          %obj.setBehavior("FallingTree");                    
       }
@@ -4742,26 +4749,26 @@ function MegaMotionTick()
    schedule(30,0,"MegaMotionTick");//30 MS =~ 32 times per second.
 }
 
-function startRecording()
+function startSceneRecording()
 {
    for (%i=0;%i<SceneShapes.getCount();%i++)
    {
       %shape = SceneShapes.getObject(%i);  
       %shape.setIsRecording(true);
-   }   
+   }
 }
 
-function stopRecording()
+function stopSceneRecording()
 {
    for (%i=0;%i<SceneShapes.getCount();%i++)
    {
       %shape = SceneShapes.getObject(%i);  
       %shape.setIsRecording(false);
    }   
-   makeSequences();
+   makeSceneSequences();
 }
 
-function makeSequences()
+function makeSceneSequences()
 {
    //OKAY... here we go. We now need to:
    // a) find our model's home directory   
@@ -4769,18 +4776,112 @@ function makeSequences()
    //       "scene_[%scene_id].[timestamp]"?
    // c) fill it with sequences
    
-   //For now, just "workSeqs", if name changes we'll have to update M4.cs every time.
-   //%dirPath = %shape.getPath() @ "/scenes/" @ %shape.sceneID ;//then make specific scene folder.
-   %sceneDirPath = "art/shapes/MegaMotionScenes/" @ $mmProjectList.getText() @ "/";
+   %sceneDirPath = "art/shapes/MegaMotionScenes/" @ $mmProjectList.getText() @ "/" 
+               @ $mmSceneList.getText() @ "/" @ getTime() @ "/";
    createDirectory(%sceneDirPath);
    for (%i=0;%i<SceneShapes.getCount();%i++)
    {
       %shape = SceneShapes.getObject(%i);  
-      %dsq_name = $mmSceneList.getSelected() @ "_" @ %shape.getSceneShapeID();
-      %shape.makeSequence(%sceneDirPath @ %dsq_name);
+      %dsq_name = %shape.getSceneShapeID();
+      %shape.makeSequence(%sceneDirPath @ "/" @ %dsq_name);
+      echo("making scene sequence: " @ %sceneDirPath @ "/" @ %dsq_name);
    }
 }
 
+function mmLoadSceneSequences()
+{
+   %path = "";
+   %dlg = new OpenFolderDialog()
+   {
+      DefaultPath    = $Pref::SceneDsqDir;
+      Filters        = "DSQ Files (*.dsq)|*.dsq|All Files (*.*)|*.*|";
+   };
+   
+   if(%dlg.Execute())
+   {
+      $Pref::SceneDsqDir = %dlg.FileName ;
+      %path = %dlg.FileName;     
+   }
+   %dlg.delete();
+   
+   if (strlen(%path)>0)
+      mmReallyLoadSceneSequences(%path);
+}
+
+function mmReallyLoadSceneSequences(%path)
+{
+   echo("Really loading scene sequences!! path = " @ %path @ "!!!!!!!!!!!!!!!!");
+   
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      %dsq_name = %shape.getSceneShapeID() @ ".dsq";
+      %index = %shape.findSeq(%shape.getSceneShapeID());
+      if (%index>-1)
+      {
+         %shape.dropSequence(%index);
+         echo("Dropping loading scene sequence!! index = " @ %index);
+      }
+      
+      %shape.loadSequence(%path @ "/" @ %dsq_name);
+      echo("Loaded sequence: " @ %path @ "/" @ %dsq_name);
+      //No need to store this name, just make it again at play time from sceneShape ID.
+   }   
+}
+
+function mmPlaySceneSequences()
+{
+   echo("Playing scene sequences!!!!!!!!!!!!!!!!!!");
+
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);
+      if (%shape.findSeq(%shape.getSceneShapeID())>-1)
+      {
+         //%shape.clearGroundMove();
+         %shape.playSeq(%shape.getSceneShapeID());
+      } else {
+         echo("Could not find sequence: " @ %shape.getSceneShapeID());
+      }
+   }
+}
+
+
+function mmExportSceneBVH()
+{
+   %path = "";
+   %dlg = new OpenFolderDialog()
+   {
+      DefaultPath    = $Pref::SceneDsqDir;
+      Filters        = "DSQ Files (*.dsq)|*.dsq|All Files (*.*)|*.*|";
+   };
+   
+   if(%dlg.Execute())
+   {
+      $Pref::SceneDsqDir = %dlg.FileName ;
+      %path = %dlg.FileName;     
+   }
+   %dlg.delete();
+   
+   if (strlen(%path)>0)
+      mmReallyExportSceneBVH(%path);
+}
+
+function mmReallyExportSceneBVH(%path)
+{
+   echo("Really loading scene sequences!! path = " @ %path @ "!!!!!!!!!!!!!!!!");
+   
+   for (%i=0;%i<SceneShapes.getCount();%i++)
+   {
+      %shape = SceneShapes.getObject(%i);  
+      %bvh_name = %shape.getSceneShapeID() @ ".bvh";
+      %index = %shape.findSeq(%shape.getSceneShapeID());
+      
+      %shape.saveBvh(%index,%path @ "/" @ %bvh_name,"OldTruebones",false);
+      //echo("Loaded sequence: " @ %path @ "/" @ %dsq_name);
+      //No need to store this name, just make it again at play time from sceneShape ID.
+   }   
+}
 //////////////////////////////////////////////////////////////////////
 
 function shapesAct()

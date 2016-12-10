@@ -110,6 +110,38 @@ new SimGroup(MissionGroup) {
          rotation = "1 0 0 0";
          scale = "1 1 1";
    };
+   new NavMesh(Nav) {
+      fileName = "levels/emptyRoom.nav";
+      waterMethod = "Ignore";
+      cellSize = "0.2";
+      cellHeight = "0.2";
+      tileSize = "10";
+      actorHeight = "2";
+      actorClimb = "0.3";
+      actorRadius = "0.5";
+      walkableSlope = "40";
+      smallCharacters = "0";
+      regularCharacters = "1";
+      largeCharacters = "0";
+      vehicles = "0";
+      innerCover = "0";
+      coverDist = "1";
+      peekDist = "0.7";
+      alwaysRender = "0";
+      borderSize = "1";
+      detailSampleDist = "6";
+      detailSampleError = "1";
+      maxEdgeLen = "1086324736";
+      simplificationError = "1.3";
+      minRegionArea = "8";
+      mergeRegionArea = "20";
+      maxPolysPerTile = "128";
+      position = "0 0 0";
+      rotation = "1 0 0 0";
+      scale = "50 50 20";
+      canSave = "1";
+      canSaveDynamicFields = "1";
+   };
 };
 //--- OBJECT WRITE END ---
 
